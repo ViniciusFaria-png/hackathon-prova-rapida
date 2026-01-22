@@ -1,6 +1,6 @@
+import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
 import { db } from './lib/db';
 
 const app = express();
@@ -9,13 +9,18 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-
 app.get('/', (req, res) => {
-  res.json({ message: "Backend em TypeScript rodando! 🚀" });
+  res.json({ message: "Server rodando!" });
 });
 
-db.init().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+app.listen(PORT, () => {
+  console.log(`Server rodando na porta ${PORT}`);
 });
+
+db.init()
+  .then(() => {
+    console.log("Banco conectado!");
+  })
+  .catch((err) => {
+    console.error("Erro ao conectar banco:", err);
+  });
