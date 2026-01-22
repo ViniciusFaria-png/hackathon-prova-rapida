@@ -20,20 +20,23 @@ class Database {
   async init(): Promise<void> {
     const client = await this.pool.connect();
     try {
-      const sqlPath = path.resolve(__dirname, '../../db/init.sql');
-      
-      console.log(`Lendo schema do banco de: ${sqlPath}`);
+      if (process.env.NODE_ENV !== 'production') {
+        const sqlPath = path.resolve(__dirname, '../../db/init.sql');
+        
+        console.log(`Lendo schema do banco de: ${sqlPath}`);
 
-      if (fs.existsSync(sqlPath)) {
+        if (fs.existsSync(sqlPath)) {
           const sql = fs.readFileSync(sqlPath, 'utf8');
           await client.query(sql);
           console.log("Schema do banco verificado/criado com sucesso!");
+        } else {
+          console.warn("Arquivo init.sql não encontrado!");
+        }
       } else {
-          console.error("Arquivo init.sql não encontrado!");
+        console.log("Produção: assumindo que o banco já está configurado");
       }
     } catch (error) {
-      console.error("Erro fatal ao iniciar banco de dados:", error);
-      process.exit(1);
+      console.error("Erro ao iniciar banco de dados:", error);
     } finally {
       client.release();
     }

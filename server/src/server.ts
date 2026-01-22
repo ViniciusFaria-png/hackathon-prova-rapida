@@ -9,22 +9,18 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-
 app.get('/', (req, res) => {
   res.json({ message: "Server rodando!" });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server rodando na porta ${PORT}`);
 });
 
 db.init()
   .then(() => {
     console.log("Banco conectado!");
-    startServer();
   })
   .catch((err) => {
-    console.error("Erro:", err);
+    console.error("Erro ao conectar banco:", err);
   });
-
-function startServer() {
-  app.listen(PORT, () => {
-    console.log(`Server rodando na porta ${PORT}`);
-  });
-}
