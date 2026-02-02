@@ -5,27 +5,43 @@ services:
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminpassword}
-      POSTGRES_DB: ${POSTGRES_DB:-hackathon_local}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./server/db:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   server:
     build: ./server
     container_name: hackathon-server
     command: yarn dev
     ports:
-      - "3000:3000"
+      - "${PORT}:3000"
     volumes:
       - ./server:/app
       - /app/node_modules
     environment:
+      - ENV=development
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - PORT=3000
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - PORT=${PORT}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   client:
     build: ./client
@@ -36,7 +52,7 @@ services:
       - ./client:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - server
 
