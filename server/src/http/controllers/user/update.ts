@@ -10,8 +10,8 @@ const updateUserParamsSchema = z.object({
 
 const updateUserBodySchema = z
   .object({
-    email: z.string().email("Invalid email format.").optional(),
-    senha: z.string().min(6, "Password must be at least 6 characters.").optional(),
+    email: z.email("Invalid email format.").optional(),
+    password: z.string().min(6, "Password must be at least 6 characters.").optional(),
   })
   .partial();
 
@@ -54,7 +54,7 @@ export const updateUserSchema = {
     type: "object",
     properties: {
       email: { type: "string", format: "email" },
-      senha: { type: "string", minLength: 6 },
+      password: { type: "string", minLength: 6 },
     },
     minProperties: 1,
   },
@@ -67,9 +67,9 @@ export const updateUserSchema = {
           properties: {
             id: { type: "number" },
             email: { type: "string" },
-            senha: { type: "string" },
+            password: { type: "string" },
           },
-          required: ["id", "email", "senha"],
+          required: ["id", "email", "password"],
         },
       },
     },
