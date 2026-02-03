@@ -27,7 +27,7 @@ export const findAllUsersSchema = {
             properties: {
               id: { type: "number" },
               email: { type: "string" },
-              senha: { type: "string" },
+              password: { type: "string" },
             },
           },
         },

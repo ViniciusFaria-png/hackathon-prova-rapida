@@ -49,9 +49,9 @@ export const findUserByIdSchema = {
           properties: {
             id: { type: "number" },
             email: { type: "string" },
-            senha: { type: "string" },
+            password: { type: "string" },
           },
-          required: ["id", "email", "senha"],
+          required: ["id", "email", "password"],
         },
       },
     },

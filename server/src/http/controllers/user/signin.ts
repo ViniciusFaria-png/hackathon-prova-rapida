@@ -26,7 +26,6 @@ export async function signin(request: FastifyRequest, reply: FastifyReply) {
       return reply.status(401).send({ message: "Email ou senha incorretos" });
     }
 
-    // Gerar JWT token
     const token = await reply.jwtSign(
       {
         sub: user.id,
@@ -46,8 +45,6 @@ export async function signin(request: FastifyRequest, reply: FastifyReply) {
       message: "Login realizado com sucesso",
     });
   } catch (error) {
-    console.log("=== ERRO NO SIGNIN ===");
-    console.log(error);
 
     if (error instanceof z.ZodError) {
       return reply.status(400).send({
@@ -70,9 +67,9 @@ export const signinSchema = {
     type: "object",
     properties: {
       email: { type: "string", format: "email" },
-      senha: { type: "string", minLength: 1 },
+      password: { type: "string", minLength: 1 },
     },
-    required: ["email", "senha"],
+    required: ["email", "password"],
   },
   response: {
     200: {
@@ -81,10 +78,8 @@ export const signinSchema = {
         user: {
           type: "object",
           properties: {
-            id: { type: "number" },
+            id: { type: "string" },
             email: { type: "string" },
-            professorName: { type: "string", nullable: true },
-            isProfessor: { type: "boolean" },
           },
         },
         token: { type: "string" },
