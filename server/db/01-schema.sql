@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS questions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     statement TEXT NOT NULL,
     subject VARCHAR(255) NOT NULL,
+    difficulty VARCHAR(50) DEFAULT 'medium',
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     is_public BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, 
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS exam_versions (
     exam_id UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
     version_name VARCHAR(50) NOT NULL,
     shuffle_seed INTEGER,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -66,3 +68,11 @@ CREATE INDEX IF NOT EXISTS idx_alternatives_question_id ON alternatives(question
 CREATE INDEX IF NOT EXISTS idx_exam_questions_exam_id ON exam_questions(exam_id);
 CREATE INDEX IF NOT EXISTS idx_exam_questions_question_id ON exam_questions(question_id);
 CREATE INDEX IF NOT EXISTS idx_exam_versions_exam_id ON exam_versions(exam_id);
+CREATE INDEX IF NOT EXISTS idx_exam_versions_status ON exam_versions(status);
+CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON questions(difficulty);
+
+DO $$ BEGIN
+    ALTER TABLE exam_versions ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'draft';
+    ALTER TABLE questions ADD COLUMN IF NOT EXISTS difficulty VARCHAR(50) DEFAULT 'medium';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;

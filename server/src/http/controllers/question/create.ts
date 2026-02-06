@@ -6,11 +6,16 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
   const createQuestionSchema = z.object({
     statement: z.string(),
     subject: z.string(),
+    difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
     isPublic: z.boolean().default(false),
     alternatives: z.array(z.object({
       text: z.string(),
       isCorrect: z.boolean(),
-    })).min(1),
+    })).min(2, "É necessário pelo menos 2 alternativas.")
+      .refine(
+        (alts) => alts.some(a => a.isCorrect),
+        "É necessário pelo menos uma alternativa correta."
+      ),
   });
 
   const data = createQuestionSchema.parse(request.body);
@@ -22,5 +27,8 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
     userId: data.isPublic ? undefined : userId,
   });
 
-  return reply.status(201).send(question);
+  return reply.status(201).send({
+    success: true,
+    data: question,
+  });
 }
