@@ -4,16 +4,23 @@ import { makeFindAllQuestionsUseCase } from "../../../use-cases/factories/make-f
 
 export async function findAll(request: FastifyRequest, reply: FastifyReply) {
   const querySchema = z.object({
+    page: z.string().transform(Number).optional(),
+    limit: z.string().transform(Number).optional(),
     subject: z.string().optional(),
+    difficulty: z.string().optional(),
     search: z.string().optional(),
     userId: z.string().uuid().optional(),
     isPublic: z.string().transform(val => val === 'true').optional(),
+    excludeUsedIn: z.string().uuid().optional(),
   });
 
   const filters = querySchema.parse(request.query);
 
   const findAllQuestionsUseCase = makeFindAllQuestionsUseCase();
-  const questions = await findAllQuestionsUseCase.handler(filters);
+  const result = await findAllQuestionsUseCase.handler(filters);
 
-  return reply.status(200).send(questions);
+  return reply.status(200).send({
+    success: true,
+    ...result,
+  });
 }

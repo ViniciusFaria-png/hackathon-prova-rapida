@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeUpdateExamUseCase } from "../../../use-cases/factories/make-update-exam-use-case";
+import { canEditExam } from "../../middleware/permissions";
 
 export async function update(request: FastifyRequest, reply: FastifyReply) {
   const updateParamsSchema = z.object({
@@ -14,6 +15,9 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
 
   const { id } = updateParamsSchema.parse(request.params);
   const data = updateBodySchema.parse(request.body);
+  const userId = request.user.sub;
+
+  await canEditExam(userId, id);
 
   const updateExamUseCase = makeUpdateExamUseCase();
   await updateExamUseCase.handler(id, data);

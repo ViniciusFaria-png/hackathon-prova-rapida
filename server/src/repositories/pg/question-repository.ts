@@ -1,4 +1,5 @@
 import { db } from '../../lib/db';
+import { PaginatedResult } from '../interfaces/exam-repository.interface';
 import { CreateQuestionDTO, FindQuestionsFilters, IQuestionRepository, QuestionWithAlternatives, UpdateQuestionDTO } from '../question-repository.interface';
 
 export class PGQuestionRepository implements IQuestionRepository {
@@ -8,9 +9,9 @@ export class PGQuestionRepository implements IQuestionRepository {
             await client.query('BEGIN');
 
             const questionResult = await client.query(
-                `INSERT INTO questions (statement, subject, user_id, is_public) 
-                 VALUES ($1, $2, $3, $4) RETURNING id`,
-                [data.statement, data.subject, data.userId || null, data.isPublic]
+                `INSERT INTO questions (statement, subject, difficulty, user_id, is_public) 
+                 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                [data.statement, data.subject, data.difficulty || 'medium', data.userId || null, data.isPublic]
             );
 
             const questionId = questionResult.rows[0].id;
@@ -32,43 +33,69 @@ export class PGQuestionRepository implements IQuestionRepository {
         }
     }
 
-    async findAll(filters: FindQuestionsFilters): Promise<QuestionWithAlternatives[]> {
-        let query = `
-            SELECT 
-                q.id, q.statement, q.subject, q.user_id, q.is_public, q.created_at, q.updated_at,
-                a.id as alt_id, a.text as alt_text, a.is_correct as alt_is_correct
-            FROM questions q
-            LEFT JOIN alternatives a ON a.question_id = q.id
-            WHERE 1=1
-        `;
+    async findAll(filters: FindQuestionsFilters): Promise<PaginatedResult<QuestionWithAlternatives>> {
+        const page = filters.page || 1;
+        const limit = filters.limit || 20;
+        const offset = (page - 1) * limit;
+
+        let whereClause = ` WHERE 1=1`;
         const params: any[] = [];
         let paramCount = 1;
 
         if (filters.subject) {
-            query += ` AND q.subject = $${paramCount++}`;
+            whereClause += ` AND q.subject = $${paramCount++}`;
             params.push(filters.subject);
         }
 
+        if (filters.difficulty) {
+            whereClause += ` AND q.difficulty = $${paramCount++}`;
+            params.push(filters.difficulty);
+        }
+
         if (filters.search) {
-            query += ` AND q.statement ILIKE $${paramCount++}`;
+            whereClause += ` AND q.statement ILIKE $${paramCount++}`;
             params.push(`%${filters.search}%`);
         }
 
         if (filters.userId) {
-            query += ` AND q.user_id = $${paramCount++}`;
+            whereClause += ` AND q.user_id = $${paramCount++}`;
             params.push(filters.userId);
         }
 
         if (filters.isPublic !== undefined) {
-            query += ` AND q.is_public = $${paramCount++}`;
+            whereClause += ` AND q.is_public = $${paramCount++}`;
             params.push(filters.isPublic);
         }
 
-        query += ` ORDER BY q.created_at DESC, a.id ASC`;
+        if (filters.excludeUsedIn) {
+            whereClause += ` AND q.id NOT IN (SELECT question_id FROM exam_questions WHERE exam_id = $${paramCount++})`;
+            params.push(filters.excludeUsedIn);
+        }
 
-        const result = await db.query(query, params);
+        const countQuery = `SELECT COUNT(DISTINCT q.id) as count FROM questions q ${whereClause}`;
+        const countResult = await db.query(countQuery, params);
+        const total = Number.parseInt(countResult.rows[0].count, 10);
 
-        // Agrupar questões e alternativas
+        const query = `
+            SELECT 
+                q.id, q.statement, q.subject, q.difficulty, q.user_id, q.is_public, q.created_at, q.updated_at,
+                a.id as alt_id, a.text as alt_text, a.is_correct as alt_is_correct
+            FROM questions q
+            LEFT JOIN alternatives a ON a.question_id = q.id
+            ${whereClause}
+            AND q.id IN (
+                SELECT qq.id FROM questions qq
+                ${whereClause.replace(/q\./g, 'qq.')}
+                ORDER BY qq.created_at DESC
+                LIMIT $${paramCount++} OFFSET $${paramCount++}
+            )
+            ORDER BY q.created_at DESC, a.id ASC
+        `;
+        
+        const queryParams = [...params, ...params, limit, offset];
+
+        const result = await db.query(query, queryParams);
+
         const questionsMap = new Map<string, QuestionWithAlternatives>();
 
         for (const row of result.rows) {
@@ -77,6 +104,7 @@ export class PGQuestionRepository implements IQuestionRepository {
                     id: row.id,
                     statement: row.statement,
                     subject: row.subject,
+                    difficulty: row.difficulty || 'medium',
                     user_id: row.user_id,
                     is_public: row.is_public,
                     created_at: row.created_at,
@@ -94,13 +122,19 @@ export class PGQuestionRepository implements IQuestionRepository {
             }
         }
 
-        return Array.from(questionsMap.values());
+        return {
+            data: Array.from(questionsMap.values()),
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
     async findById(id: string): Promise<QuestionWithAlternatives | null> {
         const result = await db.query(
             `SELECT 
-                q.id, q.statement, q.subject, q.user_id, q.is_public, q.created_at, q.updated_at,
+                q.id, q.statement, q.subject, q.difficulty, q.user_id, q.is_public, q.created_at, q.updated_at,
                 a.id as alt_id, a.text as alt_text, a.is_correct as alt_is_correct
             FROM questions q
             LEFT JOIN alternatives a ON a.question_id = q.id
@@ -117,6 +151,7 @@ export class PGQuestionRepository implements IQuestionRepository {
             id: result.rows[0].id,
             statement: result.rows[0].statement,
             subject: result.rows[0].subject,
+            difficulty: result.rows[0].difficulty || 'medium',
             user_id: result.rows[0].user_id,
             is_public: result.rows[0].is_public,
             created_at: result.rows[0].created_at,
@@ -149,6 +184,10 @@ export class PGQuestionRepository implements IQuestionRepository {
         if (data.subject !== undefined) {
             updates.push(`subject = $${paramCount++}`);
             values.push(data.subject);
+        }
+        if (data.difficulty !== undefined) {
+            updates.push(`difficulty = $${paramCount++}`);
+            values.push(data.difficulty);
         }
         if (data.isPublic !== undefined) {
             updates.push(`is_public = $${paramCount++}`);

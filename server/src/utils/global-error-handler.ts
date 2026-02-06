@@ -16,15 +16,22 @@ interface ErrorHandlerMap {
 export const errorHandlerMap: ErrorHandlerMap = {
   ZodError: (error, _, reply) => {
     return reply.status(400).send({
+      success: false,
       message: "Validation error",
       ...(error instanceof ZodError && { error: error.format() }),
     });
   },
   ResourceNotFoundError: (error, __, reply) => {
-    return reply.status(404).send({ message: error.message });
+    return reply.status(404).send({ success: false, message: error.message });
   },
   InvalidCredentialsError: (error, __, reply) => {
-    return reply.status(401).send({ message: error.message });
+    return reply.status(401).send({ success: false, message: error.message });
+  },
+  ForbiddenError: (error, __, reply) => {
+    return reply.status(403).send({ success: false, message: error.message });
+  },
+  BusinessRuleError: (error, __, reply) => {
+    return reply.status(422).send({ success: false, message: error.message });
   },
 };
 
