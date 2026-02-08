@@ -66,7 +66,7 @@ export default function LoginPage() {
       >
         <Box textAlign="center" mb={4}>
           <Typography variant="h4" fontWeight={700} color="primary" gutterBottom>
-            Prova Rápida
+            Prova Fácil
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Faça login para acessar o sistema

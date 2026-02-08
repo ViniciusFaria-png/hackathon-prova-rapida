@@ -68,7 +68,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Box sx={{ p: 2.5, textAlign: "center" }}>
         <Typography variant="h5" fontWeight={700} color="primary">
-          Prova Rápida
+          Prova Fácil
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Gerador de Provas
@@ -212,7 +212,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <MenuIcon />
               </IconButton>
               <Typography variant="h6" noWrap fontWeight={600}>
-                Prova Rápida
+                Prova Fácil
               </Typography>
               <Box sx={{ flexGrow: 1 }} />
               <IconButton
