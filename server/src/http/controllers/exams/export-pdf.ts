@@ -1,29 +1,42 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { makeExportExamPdfUseCase } from "../../../use-cases/factories/make-export-exam-pdf-use-case";
+import { PGExamRepository } from "../../../repositories/pg/exam-repository";
+import { ExportExamPdfUseCase } from "../../../use-cases/export-exam-pdf";
 
 export async function exportPdf(request: FastifyRequest, reply: FastifyReply) {
+  console.log('[ROUTE] Export PDF chamado');
   const paramsSchema = z.object({
     id: z.uuid(),
   });
 
   const querySchema = z.object({
     versionId: z.string().uuid().optional(),
-    includeAnswerKey: z.string().transform(val => val === 'true').optional(),
+    includeAnswerKey: z.string().optional().transform(val => val === 'true'),
+    ecoMode: z.enum(['normal', 'save-paper', 'save-ink', 'eco-max']).optional().default('normal'),
   });
 
-  const { id: examId } = paramsSchema.parse(request.params);
-  const { versionId, includeAnswerKey } = querySchema.parse(request.query);
+  try {
+    const { id: examId } = paramsSchema.parse(request.params);
+    const { versionId, includeAnswerKey, ecoMode } = querySchema.parse(request.query);
+    
+    console.log('[ROUTE] ExamId:', examId, 'ecoMode:', ecoMode);
 
-  const exportPdfUseCase = makeExportExamPdfUseCase();
-  const pdfBuffer = await exportPdfUseCase.handler({
-    examId,
-    versionId,
-    includeAnswerKey: includeAnswerKey || false,
-  });
+    const examRepo = new PGExamRepository();
+    const useCase = new ExportExamPdfUseCase(examRepo);
+    const pdfBuffer = await useCase.handler({
+      examId,
+      versionId,
+      includeAnswerKey,
+      ecoMode,
+    });
 
-  return reply
-    .header('Content-Type', 'application/pdf')
-    .header('Content-Disposition', `attachment; filename="prova-${examId}.pdf"`)
-    .send(pdfBuffer);
+    console.log('[ROUTE] PDF gerado, enviando...');
+    return reply
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', `attachment; filename="prova-${examId}.pdf"`)
+      .send(pdfBuffer);
+  } catch (error: any) {
+    console.error('[ROUTE] Erro:', error.message, error.stack);
+    return reply.status(500).send({ message: error.message || 'Erro ao gerar PDF' });
+  }
 }

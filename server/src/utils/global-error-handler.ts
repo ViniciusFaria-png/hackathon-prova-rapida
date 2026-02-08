@@ -40,7 +40,13 @@ export const globalErrorHandler = (
   _: FastifyRequest,
   reply: FastifyReply
 ) => {
-  if (env.NODE_ENV === "development") {
+  console.error('############### ERRO CAPTURADO ###############');
+  console.error('Nome:', error.name);
+  console.error('Mensagem:', error.message);
+  console.error('Stack:', error.stack);
+  console.error('###############################################');
+
+  if (env.NODE_ENV === "development" || env.ENV === "development") {
     console.error(error);
   }
 

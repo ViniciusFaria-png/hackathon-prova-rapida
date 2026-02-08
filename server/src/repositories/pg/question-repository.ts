@@ -43,8 +43,8 @@ export class PGQuestionRepository implements IQuestionRepository {
         let paramCount = 1;
 
         if (filters.subject) {
-            whereClause += ` AND q.subject = $${paramCount++}`;
-            params.push(filters.subject);
+            whereClause += ` AND q.subject ILIKE $${paramCount++}`;
+            params.push(`%${filters.subject}%`);
         }
 
         if (filters.difficulty) {
@@ -65,6 +65,12 @@ export class PGQuestionRepository implements IQuestionRepository {
         if (filters.isPublic !== undefined) {
             whereClause += ` AND q.is_public = $${paramCount++}`;
             params.push(filters.isPublic);
+        }
+
+        // Filter: show public questions OR private questions created by current user
+        if (filters.currentUserId) {
+            whereClause += ` AND (q.is_public = true OR (q.is_public = false AND q.user_id = $${paramCount++}))`;
+            params.push(filters.currentUserId);
         }
 
         if (filters.excludeUsedIn) {
@@ -92,7 +98,7 @@ export class PGQuestionRepository implements IQuestionRepository {
             ORDER BY q.created_at DESC, a.id ASC
         `;
         
-        const queryParams = [...params, ...params, limit, offset];
+        const queryParams = [...params, limit, offset];
 
         const result = await db.query(query, queryParams);
 

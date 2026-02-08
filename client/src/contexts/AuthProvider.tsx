@@ -1,38 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { signIn } from "../actions/auth";
-import { AuthContext, type DecodedToken, type User } from "./AuthContext";
+import { getCurrentUser, signIn, signUp } from "../actions/auth";
+import { AuthContext, type User } from "./AuthContext";
 
-function decodeJWT(token: string): DecodedToken | null {
+function decodeJWT(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) throw new Error("Token JWT inválido");
-
+    if (parts.length !== 3) return null;
     const payload = parts[1];
     const paddedPayload = payload + "=".repeat((4 - (payload.length % 4)) % 4);
     return JSON.parse(atob(paddedPayload));
-  } catch (error) {
-    console.error("❌ Erro ao decodificar JWT:", error);
+  } catch {
     return null;
   }
 }
 
 function isTokenExpired(token: string): boolean {
   const decoded = decodeJWT(token);
-  if (!decoded || !decoded.exp) return true;
-
-  const currentTime = Math.floor(Date.now() / 1000);
-  const bufferTime = 5 * 60; // 5 min
-  return decoded.exp - bufferTime < currentTime;
-}
-
-function createUserFromToken(decoded: DecodedToken, email: string): User {
-  return {
-    id: String(decoded.sub || decoded.id || decoded.userId || "unknown"),
-    email: decoded.email || email,
-    professorName: decoded.professorName || decoded.professor_name,
-    isProfessor: Boolean(decoded.isProfessor || decoded.is_professor),
-    professorId: decoded.professorId || decoded.professor_id,
-  };
+  if (!decoded || typeof decoded.exp !== "number") return true;
+  return decoded.exp - 300 < Math.floor(Date.now() / 1000);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -44,27 +29,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const savedUserData = localStorage.getItem("userData");
-
         if (!token || isTokenExpired(token)) {
           localStorage.removeItem("token");
           localStorage.removeItem("userData");
           setUser(null);
           return;
         }
-
+        const savedUserData = localStorage.getItem("userData");
         if (savedUserData) {
-          setUser(JSON.parse(savedUserData));
-        } else {
-          const decoded = decodeJWT(token);
-          if (decoded) {
-            const userData = createUserFromToken(decoded, "");
-            setUser(userData);
-            localStorage.setItem("userData", JSON.stringify(userData));
+          // If stored userData exists but lacks the name (older sessions), refresh from API
+          const parsed = JSON.parse(savedUserData) as Partial<User>;
+          if (parsed.name) {
+            setUser(parsed as User);
+          } else {
+            const userData = await getCurrentUser();
+            const u: User = {
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+            };
+            localStorage.setItem("userData", JSON.stringify(u));
+            setUser(u);
           }
+        } else {
+          const userData = await getCurrentUser();
+          const u: User = {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+          };
+          localStorage.setItem("userData", JSON.stringify(u));
+          setUser(u);
         }
-      } catch (error) {
-        console.error("❌ Erro na verificação de autenticação:", error);
+      } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("userData");
         setUser(null);
@@ -72,36 +69,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-
     checkAuth();
   }, []);
 
-  const login = async (email: string, senha: string) => {
-    const response = await signIn({ email, senha });
-    if (!response.token) throw new Error("Token não recebido do servidor");
-
-    if (isTokenExpired(response.token)) throw new Error("Token expirado");
-
-    let userData: User;
-    if (response.user) {
-      const decoded = decodeJWT(response.token);
-      userData = {
-        id: String(response.user.id || response.user.sub || "unknown"),
-        email: response.user.email || email,
-        professorName: response.user.professorName,
-        isProfessor: Boolean(response.user.isProfessor),
-        professorId:
-          response.user.professorId ||
-          (decoded ? decoded.professorId : undefined),
-      };
-    } else {
-      const decoded = decodeJWT(response.token);
-      if (!decoded) throw new Error("Não foi possível decodificar o token");
-      userData = createUserFromToken(decoded, email);
-    }
-
+  const login = async (email: string, password: string) => {
+    const response = await signIn({ email, password });
+    if (!response.token) throw new Error("Token nao recebido do servidor");
+    const userData: User = {
+      id: response.user?.id ?? "unknown",
+      name: response.user?.name ?? "",
+      email: response.user?.email ?? email,
+    };
     localStorage.setItem("userData", JSON.stringify(userData));
     setUser(userData);
+  };
+
+  const register = async (name: string, email: string, password: string) => {
+    await signUp({ name, email, password });
+    await login(email, password);
   };
 
   const logout = () => {
@@ -110,9 +95,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const refreshUser = (userData: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...userData };
+      localStorage.setItem("userData", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, login, logout }}
+      value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

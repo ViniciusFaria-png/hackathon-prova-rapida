@@ -36,7 +36,13 @@ axiosInstance.interceptors.response.use(
 export default axiosInstance;
 
 export const endpoints = {
-  posts: "/posts",
+  auth: {
+    login: "/auth/login",
+    logout: "/auth/logout",
+  },
+  users: "/users",
   user: "/user",
-  teacher: "/teacher",
+  questions: "/questions",
+  alternatives: "/alternatives",
+  exams: "/exams",
 };

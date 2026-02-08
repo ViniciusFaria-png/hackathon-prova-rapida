@@ -5,15 +5,20 @@ import { makeUpdateUserUseCase } from "../../../use-cases/factories/make-update-
 export async function updateMe(request: FastifyRequest, reply: FastifyReply) {
   const bodySchema = z.object({
     name: z.string().optional(),
-    email: z.string().optional(),
+    email: z.string().email().optional(),
   });
 
   const data = bodySchema.parse(request.body);
   const userId = request.user.sub;
 
   const updateUserUseCase = makeUpdateUserUseCase();
-  await updateUserUseCase.execute({ userId, ...data });
+  const { user } = await updateUserUseCase.execute({ userId, ...data });
 
-  return reply.status(200).send({ message: "Perfil atualizado com sucesso" });
+  const { password, ...userWithoutPassword } = user;
+
+  return reply.status(200).send({ 
+    message: "Perfil atualizado com sucesso",
+    user: userWithoutPassword,
+  });
 }
 

@@ -1,52 +1,120 @@
-import { useEffect, useState } from 'react'
-import './App.css'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { ThemeProvider } from "@mui/material/styles";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { Toaster } from "sonner";
+import "./App.css";
+import { AuthProvider } from "./contexts/AuthProvider";
+import { ProtectedRoute } from "./contexts/ProtectedRoute";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
+import { ExamCreateEditPage } from "./pages/exam/ExamCreateEditPage";
+import { ExamDetailPage } from "./pages/exam/ExamDetailPage";
+import { ExamPage } from "./pages/exam/ExamPage";
+import { QuestionCreateEditPage } from "./pages/question/QuestionCreateEditPage";
+import { QuestionListPage } from "./pages/question/QuestionListPage";
+import ProfilePage from "./pages/user/ProfilePage";
+import { paths } from "./routes/paths";
+import { theme } from "./theme/theme";
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [status, setStatus] = useState("Conectando ao servidor...");
-
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL;
-    
-    fetch(`${apiUrl}/`) 
-      .then(res => res.json())
-      .then(data => setStatus(data.message)) 
-      .catch(err => {
-        console.error("Erro:", err);
-        setStatus("Erro ao conectar com o backend 😢");
-      });
-  }, []);
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card" style={{ border: '2px solid #646cff', padding: '1rem', marginBottom: '1rem' }}>
-        <h3>Status do Backend:</h3>
-        <p>{status}</p>
-      </div>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ThemeProvider theme={theme}>
+      <Toaster position="top-right" richColors />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path={paths.auth.login} element={<LoginPage />} />
+            <Route path={paths.auth.register} element={<RegisterPage />} />
+
+            {/* Protected routes */}
+            <Route
+              path={paths.dashboard}
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.profile}
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.exams.root}
+              element={
+                <ProtectedRoute>
+                  <ExamPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.exams.create}
+              element={
+                <ProtectedRoute>
+                  <ExamCreateEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.exams.details(":id")}
+              element={
+                <ProtectedRoute>
+                  <ExamDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.exams.edit(":id")}
+              element={
+                <ProtectedRoute>
+                  <ExamCreateEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.questions.root}
+              element={
+                <ProtectedRoute>
+                  <QuestionListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.questions.create}
+              element={
+                <ProtectedRoute>
+                  <QuestionCreateEditPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={paths.questions.edit(":id")}
+              element={
+                <ProtectedRoute>
+                  <QuestionCreateEditPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Default redirect */}
+            <Route
+              path="/"
+              element={<Navigate to={paths.dashboard} replace />}
+            />
+            <Route
+              path="*"
+              element={<Navigate to={paths.dashboard} replace />}
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

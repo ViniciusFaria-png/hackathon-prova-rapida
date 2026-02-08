@@ -1,18 +1,19 @@
 export const paths = {
   auth: {
-    user: {
-      signIn: "/user/signin",
-    },
+    login: "/login",
+    register: "/register",
   },
-
-  posts: {
-    root: "/posts",
-    create: "/posts/create",
-    edit: (id: string) => `/posts/${id}/edit`,
-    details: (id: string) => `/posts/${id}`,
+  dashboard: "/dashboard",
+  profile: "/profile",
+  exams: {
+    root: "/exams",
+    create: "/exams/create",
+    edit: (id: string) => `/exams/${id}/edit`,
+    details: (id: string) => `/exams/${id}`,
   },
-  teacher: {
-    root: "/teacher",
-    details: (id: string) => `/teacher/${id}`,
+  questions: {
+    root: "/questions",
+    create: "/questions/create",
+    edit: (id: string) => `/questions/${id}/edit`,
   },
 };

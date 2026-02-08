@@ -24,7 +24,7 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
   const createQuestionUseCase = makeCreateQuestionUseCase();
   const question = await createQuestionUseCase.handler({
     ...data,
-    userId: data.isPublic ? undefined : userId,
+    userId,
   });
 
   return reply.status(201).send({

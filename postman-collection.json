@@ -1,0 +1,1033 @@
+{
+  "info": {
+    "name": "Prova Rápida API",
+    "description": "Coleção completa da API do Prova Rápida - Sistema de criação e gerenciamento de provas.\n\n## Autenticação\nA maioria dos endpoints requer autenticação via JWT Bearer Token.\n1. Crie um usuário em **Auth > Registrar Usuário**\n2. Faça login em **Auth > Login**\n3. O token retornado é automaticamente salvo na variável `{{token}}`\n\n## Modo Economia (Eco Mode)\nAo exportar PDFs, use o query param `ecoMode` para economizar papel e/ou tinta:\n- `normal` — Layout padrão\n- `save-paper` — Economia de ~30-40% de papel\n- `save-ink` — Economia de ~25-35% de tinta\n- `eco-max` — Economia máxima (papel + tinta)\n\n## Variáveis\n- `base_url`: URL base da API (padrão: http://localhost:3000)\n- `token`: Token JWT (preenchido automaticamente após login)\n- `exam_id`: ID de uma prova (preencher manualmente ou via scripts)\n- `question_id`: ID de uma questão\n- `alternative_id`: ID de uma alternativa\n- `user_id`: ID de um usuário\n- `version_id`: ID de uma versão de prova",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "exam_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "question_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "alternative_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "version_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints de autenticação (registro, login, logout)",
+      "item": [
+        {
+          "name": "Registrar Usuário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('user_id', json.id);",
+                  "    }",
+                  "    pm.test('Usuário criado com sucesso', () => {",
+                  "        pm.response.to.have.status(201);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Professor\",\n  \"email\": \"joao@email.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Registra um novo usuário no sistema.\n\n**Campos obrigatórios:**\n- `name` (string): Nome do usuário\n- `email` (string): Email válido\n- `password` (string): Senha com mínimo 6 caracteres"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.token) {",
+                  "        pm.collectionVariables.set('token', json.token);",
+                  "        console.log('Token salvo automaticamente!');",
+                  "    }",
+                  "    if (json.user && json.user.id) {",
+                  "        pm.collectionVariables.set('user_id', json.user.id);",
+                  "    }",
+                  "    pm.test('Login realizado com sucesso', () => {",
+                  "        pm.response.to.have.status(200);",
+                  "        pm.expect(json).to.have.property('token');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@email.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica o usuário e retorna um token JWT.\n\n**Campos obrigatórios:**\n- `email` (string): Email do usuário\n- `password` (string): Senha do usuário\n\n**Resposta:** O token JWT é salvo automaticamente na variável `{{token}}`."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Encerra a sessão do usuário autenticado.\n\n**Requer:** Bearer Token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meu Perfil",
+      "description": "Endpoints do usuário autenticado (perfil próprio)",
+      "item": [
+        {
+          "name": "Obter Meu Perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Retorna os dados do usuário autenticado (sem a senha).\n\n**Requer:** Bearer Token"
+          }
+        },
+        {
+          "name": "Atualizar Meu Perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Atualizado\",\n  \"email\": \"joao.novo@email.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Atualiza os dados do perfil do usuário autenticado.\n\n**Campos opcionais:**\n- `name` (string): Novo nome\n- `email` (string): Novo email"
+          }
+        },
+        {
+          "name": "Alterar Minha Senha",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"novaSenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/me/password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me", "password"]
+            },
+            "description": "Altera a senha do usuário autenticado.\n\n**Campos obrigatórios:**\n- `currentPassword` (string): Senha atual\n- `newPassword` (string): Nova senha (mínimo 6 caracteres)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários (Admin)",
+      "description": "Endpoints administrativos para gerenciar usuários",
+      "item": [
+        {
+          "name": "Listar Todos os Usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user",
+              "host": ["{{base_url}}"],
+              "path": ["user"]
+            },
+            "description": "Lista todos os usuários do sistema.\n\n**Requer:** Bearer Token"
+          }
+        },
+        {
+          "name": "Buscar Usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{user_id}}"]
+            },
+            "description": "Busca um usuário específico pelo ID.\n\n**Parâmetros:**\n- `id` (path): ID numérico do usuário"
+          }
+        },
+        {
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"novo-email@email.com\",\n  \"password\": \"novaSenha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{user_id}}"]
+            },
+            "description": "Atualiza os dados de um usuário pelo ID.\n\n**Parâmetros:**\n- `id` (path): ID numérico do usuário\n\n**Campos opcionais:**\n- `email` (string): Novo email\n- `password` (string): Nova senha (mínimo 6 caracteres)"
+          }
+        },
+        {
+          "name": "Deletar Usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["user", "{{user_id}}"]
+            },
+            "description": "Remove um usuário do sistema pelo ID.\n\n**Parâmetros:**\n- `id` (path): ID numérico do usuário"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Provas (Exams)",
+      "description": "CRUD e operações de gerenciamento de provas",
+      "item": [
+        {
+          "name": "CRUD",
+          "description": "Operações básicas de criação, leitura, atualização e remoção de provas",
+          "item": [
+            {
+              "name": "Criar Prova",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('exam_id', json.id);",
+                      "        console.log('exam_id salvo: ' + json.id);",
+                      "    }",
+                      "    pm.test('Prova criada com sucesso', () => {",
+                      "        pm.response.to.have.status(201);",
+                      "    });",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Prova de Matemática - 1º Bimestre\",\n  \"subject\": \"Matemática\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams"]
+                },
+                "description": "Cria uma nova prova.\n\n**Campos obrigatórios:**\n- `title` (string): Título da prova\n- `subject` (string): Disciplina/matéria"
+              }
+            },
+            {
+              "name": "Listar Todas as Provas",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams"]
+                },
+                "description": "Lista todas as provas do usuário autenticado."
+              }
+            },
+            {
+              "name": "Buscar Prova por ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}"]
+                },
+                "description": "Busca uma prova específica pelo ID, incluindo suas questões e alternativas.\n\n**Parâmetros:**\n- `id` (path): UUID da prova"
+              }
+            },
+            {
+              "name": "Atualizar Prova",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Prova de Matemática - 2º Bimestre\",\n  \"subject\": \"Matemática Avançada\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}"]
+                },
+                "description": "Atualiza os dados de uma prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos opcionais:**\n- `title` (string): Novo título\n- `subject` (string): Nova disciplina"
+              }
+            },
+            {
+              "name": "Deletar Prova",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}"]
+                },
+                "description": "Remove uma prova pelo ID.\n\n**Parâmetros:**\n- `id` (path): UUID da prova"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Questões da Prova",
+          "description": "Gerenciamento de questões dentro de uma prova",
+          "item": [
+            {
+              "name": "Adicionar Questão à Prova",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"questionId\": \"{{question_id}}\",\n  \"position\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/questions",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "questions"]
+                },
+                "description": "Adiciona uma questão existente a uma prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos obrigatórios:**\n- `questionId` (UUID): ID da questão a ser adicionada\n- `position` (number): Posição da questão na prova (inteiro positivo)"
+              }
+            },
+            {
+              "name": "Remover Questão da Prova",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/questions/{{question_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "questions", "{{question_id}}"]
+                },
+                "description": "Remove uma questão de uma prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n- `questionId` (path): UUID da questão"
+              }
+            },
+            {
+              "name": "Reordenar Questões da Prova",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"questions\": [\n    {\n      \"questionId\": \"{{question_id}}\",\n      \"position\": 1\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/questions/reorder",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "questions", "reorder"]
+                },
+                "description": "Reordena as questões de uma prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos obrigatórios:**\n- `questions` (array): Lista de objetos com:\n  - `questionId` (UUID): ID da questão\n  - `position` (number): Nova posição (inteiro positivo)"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Versões e Embaralhamento",
+          "description": "Geração de versões, embaralhamento e finalização de provas",
+          "item": [
+            {
+              "name": "Embaralhar Prova (Shuffle)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"versionName\": \"Versão A\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/shuffle",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "shuffle"]
+                },
+                "description": "Cria uma versão embaralhada da prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos obrigatórios:**\n- `versionName` (string): Nome da versão (ex: \"Versão A\")"
+              }
+            },
+            {
+              "name": "Gerar Múltiplas Versões",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const json = pm.response.json();",
+                      "    if (json.data && json.data.length > 0 && json.data[0].id) {",
+                      "        pm.collectionVariables.set('version_id', json.data[0].id);",
+                      "        console.log('version_id salvo: ' + json.data[0].id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"count\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/generate-versions",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "generate-versions"]
+                },
+                "description": "Gera múltiplas versões embaralhadas da prova automaticamente.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos obrigatórios:**\n- `count` (number): Quantidade de versões a gerar (1 a 26)"
+              }
+            },
+            {
+              "name": "Finalizar Versão da Prova",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/finalize",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "finalize"]
+                },
+                "description": "Finaliza a versão de uma prova, marcando-a como concluída.\n\n**Parâmetros:**\n- `id` (path): UUID da prova"
+              }
+            },
+            {
+              "name": "Duplicar Prova",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"newTitle\": \"Cópia - Prova de Matemática\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/duplicate",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "duplicate"]
+                },
+                "description": "Duplica uma prova existente com todas as suas questões.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Campos opcionais:**\n- `newTitle` (string): Título para a prova duplicada"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Exportação e Validação",
+          "description": "Exportar PDFs (com modos de economia de papel/tinta), preview, validação e estatísticas",
+          "item": [
+            {
+              "name": "Preview da Prova",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/preview",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "preview"]
+                },
+                "description": "Retorna uma prévia formatada da prova para visualização.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Query params opcionais:**\n- `versionId` (UUID): ID de uma versão específica"
+              }
+            },
+            {
+              "name": "Preview da Prova (Versão Específica)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/preview?versionId={{version_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "preview"],
+                  "query": [
+                    {
+                      "key": "versionId",
+                      "value": "{{version_id}}"
+                    }
+                  ]
+                },
+                "description": "Retorna o preview de uma versão específica da prova.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n- `versionId` (query): UUID da versão"
+              }
+            },
+            {
+              "name": "Exportar Prova em PDF",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"]
+                },
+                "description": "Exporta a prova como arquivo PDF.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Query params opcionais:**\n- `versionId` (UUID): Exportar versão específica\n- `includeAnswerKey` (string: \"true\"/\"false\"): Incluir gabarito no PDF\n- `ecoMode` (string): Modo de economia — \"normal\", \"save-paper\", \"save-ink\" ou \"eco-max\"\n\n**Resposta:** Arquivo PDF (application/pdf)"
+              }
+            },
+            {
+              "name": "Exportar PDF com Gabarito",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?includeAnswerKey=true",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "includeAnswerKey",
+                      "value": "true"
+                    }
+                  ]
+                },
+                "description": "Exporta a prova como PDF incluindo o gabarito.\n\n**Query params opcionais:**\n- `ecoMode` (string): Modo de economia — \"normal\", \"save-paper\", \"save-ink\" ou \"eco-max\""
+              }
+            },
+            {
+              "name": "Exportar PDF de Versão Específica",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?versionId={{version_id}}&includeAnswerKey=false",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "versionId",
+                      "value": "{{version_id}}"
+                    },
+                    {
+                      "key": "includeAnswerKey",
+                      "value": "false"
+                    }
+                  ]
+                },
+                "description": "Exporta uma versão específica da prova como PDF.\n\n**Query params opcionais:**\n- `ecoMode` (string): Modo de economia — \"normal\", \"save-paper\", \"save-ink\" ou \"eco-max\""
+              }
+            },
+            {
+              "name": "Exportar PDF — Economia de Papel",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?ecoMode=save-paper",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "ecoMode",
+                      "value": "save-paper"
+                    }
+                  ]
+                },
+                "description": "Exporta a prova em modo Economia de Papel: margens reduzidas, fonte menor e espaçamentos compactos. Economiza ~30-40% de papel."
+              }
+            },
+            {
+              "name": "Exportar PDF — Economia de Tinta",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?ecoMode=save-ink",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "ecoMode",
+                      "value": "save-ink"
+                    }
+                  ]
+                },
+                "description": "Exporta a prova em modo Economia de Tinta: tons de cinza, sem negrito, sem elementos decorativos. Economiza ~25-35% de tinta."
+              }
+            },
+            {
+              "name": "Exportar PDF — Economia Máxima",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?ecoMode=eco-max",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "ecoMode",
+                      "value": "eco-max"
+                    }
+                  ]
+                },
+                "description": "Exporta a prova em modo Economia Máxima: combina economia de papel e tinta. Ideal para escolas com orçamento limitado. Economiza ~40-50% de papel e ~25-35% de tinta."
+              }
+            },
+            {
+              "name": "Exportar PDF — Economia Máxima com Gabarito",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/export?ecoMode=eco-max&includeAnswerKey=true",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "export"],
+                  "query": [
+                    {
+                      "key": "ecoMode",
+                      "value": "eco-max"
+                    },
+                    {
+                      "key": "includeAnswerKey",
+                      "value": "true"
+                    }
+                  ]
+                },
+                "description": "Exporta a prova com gabarito usando o modo Economia Máxima."
+              }
+            },
+            {
+              "name": "Gerar Gabarito (PDF)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/answer-key",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "answer-key"]
+                },
+                "description": "Gera o gabarito da prova como arquivo PDF.\n\n**Parâmetros:**\n- `id` (path): UUID da prova\n\n**Query params opcionais:**\n- `versionId` (UUID): Gabarito de versão específica\n- `ecoMode` (string): Modo de economia — \"normal\", \"save-paper\", \"save-ink\" ou \"eco-max\"\n\n**Resposta:** Arquivo PDF (application/pdf)"
+              }
+            },
+            {
+              "name": "Gerar Gabarito — Economia Máxima (PDF)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/answer-key?ecoMode=eco-max",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "answer-key"],
+                  "query": [
+                    {
+                      "key": "ecoMode",
+                      "value": "eco-max"
+                    }
+                  ]
+                },
+                "description": "Gera o gabarito da prova com modo Economia Máxima."
+              }
+            },
+            {
+              "name": "Gerar Gabarito de Versão (PDF)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/answer-key?versionId={{version_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "answer-key"],
+                  "query": [
+                    {
+                      "key": "versionId",
+                      "value": "{{version_id}}"
+                    }
+                  ]
+                },
+                "description": "Gera o gabarito de uma versão específica da prova.\n\n**Query params opcionais:**\n- `ecoMode` (string): Modo de economia — \"normal\", \"save-paper\", \"save-ink\" ou \"eco-max\""
+              }
+            },
+            {
+              "name": "Listar Modos de Economia (Eco Modes)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/eco-modes",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "eco-modes"]
+                },
+                "description": "Retorna a lista de modos de economia disponíveis para exportação de PDF.\n\nCada modo inclui:\n- `mode` (string): Identificador do modo (normal, save-paper, save-ink, eco-max)\n- `label` (string): Nome amigável do modo\n- `description` (string): Descrição do que o modo faz\n- `savings.paper` (string): Estimativa de economia de papel\n- `savings.ink` (string): Estimativa de economia de tinta\n\n**Resposta:**\n```json\n{\n  \"modes\": [\n    { \"mode\": \"normal\", \"label\": \"Normal\", ... },\n    { \"mode\": \"save-paper\", \"label\": \"Economia de Papel\", ... },\n    { \"mode\": \"save-ink\", \"label\": \"Economia de Tinta\", ... },\n    { \"mode\": \"eco-max\", \"label\": \"Economia Máxima\", ... }\n  ]\n}\n```"
+              }
+            },
+            {
+              "name": "Validar Prova",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/validate",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "validate"]
+                },
+                "description": "Valida se a prova está completa e pronta para uso (verifica se todas as questões têm alternativas válidas, etc).\n\n**Parâmetros:**\n- `id` (path): UUID da prova"
+              }
+            },
+            {
+              "name": "Estatísticas da Prova",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/exams/{{exam_id}}/stats",
+                  "host": ["{{base_url}}"],
+                  "path": ["exams", "{{exam_id}}", "stats"]
+                },
+                "description": "Retorna estatísticas detalhadas da prova (quantidade de questões, dificuldade média, etc).\n\n**Parâmetros:**\n- `id` (path): UUID da prova"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Questões (Questions)",
+      "description": "CRUD de questões do banco de questões",
+      "item": [
+        {
+          "name": "Criar Questão (com Alternativas)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.id) {",
+                  "        pm.collectionVariables.set('question_id', json.data.id);",
+                  "        console.log('question_id salvo: ' + json.data.id);",
+                  "    }",
+                  "    pm.test('Questão criada com sucesso', () => {",
+                  "        pm.response.to.have.status(201);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statement\": \"Qual é a raiz quadrada de 144?\",\n  \"subject\": \"Matemática\",\n  \"difficulty\": \"easy\",\n  \"isPublic\": false,\n  \"alternatives\": [\n    { \"text\": \"10\", \"isCorrect\": false },\n    { \"text\": \"12\", \"isCorrect\": true },\n    { \"text\": \"14\", \"isCorrect\": false },\n    { \"text\": \"16\", \"isCorrect\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/questions",
+              "host": ["{{base_url}}"],
+              "path": ["questions"]
+            },
+            "description": "Cria uma nova questão com suas alternativas.\n\n**Campos obrigatórios:**\n- `statement` (string): Enunciado da questão\n- `subject` (string): Disciplina/matéria\n- `alternatives` (array): Mínimo 2 alternativas, pelo menos 1 correta\n  - `text` (string): Texto da alternativa\n  - `isCorrect` (boolean): Se é a alternativa correta\n\n**Campos opcionais:**\n- `difficulty` (enum): \"easy\", \"medium\" ou \"hard\" (padrão: \"medium\")\n- `isPublic` (boolean): Se a questão é pública (padrão: false)"
+          }
+        },
+        {
+          "name": "Listar Todas as Questões",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/questions",
+              "host": ["{{base_url}}"],
+              "path": ["questions"]
+            },
+            "description": "Lista todas as questões disponíveis para o usuário."
+          }
+        },
+        {
+          "name": "Buscar Questão por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}"]
+            },
+            "description": "Busca uma questão específica pelo ID, incluindo suas alternativas.\n\n**Parâmetros:**\n- `id` (path): UUID da questão"
+          }
+        },
+        {
+          "name": "Atualizar Questão",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statement\": \"Qual é a raiz quadrada de 169?\",\n  \"subject\": \"Matemática\",\n  \"difficulty\": \"medium\",\n  \"isPublic\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}"]
+            },
+            "description": "Atualiza os dados de uma questão.\n\n**Parâmetros:**\n- `id` (path): UUID da questão\n\n**Campos opcionais:**\n- `statement` (string): Novo enunciado\n- `subject` (string): Nova disciplina\n- `difficulty` (enum): \"easy\", \"medium\" ou \"hard\"\n- `isPublic` (boolean): Visibilidade"
+          }
+        },
+        {
+          "name": "Deletar Questão",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}"]
+            },
+            "description": "Remove uma questão pelo ID.\n\n**Parâmetros:**\n- `id` (path): UUID da questão"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alternativas (Alternatives)",
+      "description": "Gerenciamento de alternativas de questões",
+      "item": [
+        {
+          "name": "Criar Alternativa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('alternative_id', json.id);",
+                  "        console.log('alternative_id salvo: ' + json.id);",
+                  "    }",
+                  "    pm.test('Alternativa criada com sucesso', () => {",
+                  "        pm.response.to.have.status(201);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Nova alternativa de exemplo\",\n  \"isCorrect\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/questions/{{question_id}}/alternatives",
+              "host": ["{{base_url}}"],
+              "path": ["questions", "{{question_id}}", "alternatives"]
+            },
+            "description": "Adiciona uma nova alternativa a uma questão.\n\n**Parâmetros:**\n- `questionId` (path): UUID da questão\n\n**Campos obrigatórios:**\n- `text` (string): Texto da alternativa\n- `isCorrect` (boolean): Se é a alternativa correta"
+          }
+        },
+        {
+          "name": "Atualizar Alternativa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Alternativa atualizada\",\n  \"isCorrect\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/alternatives/{{alternative_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["alternatives", "{{alternative_id}}"]
+            },
+            "description": "Atualiza uma alternativa existente.\n\n**Parâmetros:**\n- `id` (path): UUID da alternativa\n\n**Campos opcionais:**\n- `text` (string): Novo texto\n- `isCorrect` (boolean): Se é a resposta correta"
+          }
+        },
+        {
+          "name": "Deletar Alternativa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/alternatives/{{alternative_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["alternatives", "{{alternative_id}}"]
+            },
+            "description": "Remove uma alternativa pelo ID.\n\n**Parâmetros:**\n- `id` (path): UUID da alternativa"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -44,6 +44,7 @@ export interface FindQuestionsFilters {
     page?: number;
     limit?: number;
     excludeUsedIn?: string;
+    currentUserId?: string;
 }
 
 export interface IQuestionRepository {

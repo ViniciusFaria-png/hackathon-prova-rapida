@@ -1,28 +1,29 @@
+import { Box, CircularProgress } from "@mui/material";
 import React from "react";
+import { Navigate } from "react-router";
 import { useAuth } from "../hooks/useAuth";
+import { paths } from "../routes/paths";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div
-        style={{ display: "flex", justifyContent: "center", height: "100vh" }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
       >
-        Carregando...
-      </div>
+        <CircularProgress size={48} />
+      </Box>
     );
   }
 
   if (!isAuthenticated) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", height: "100vh" }}
-      >
-        <h2>Acesso Restrito</h2>
-        <p>Você precisa fazer login para acessar esta página.</p>
-      </div>
-    );
+    return <Navigate to={paths.auth.login} replace />;
   }
 
   return <>{children}</>;

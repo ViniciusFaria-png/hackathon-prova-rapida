@@ -1,76 +1,86 @@
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  Visibility as ViewIcon,
+    Add as AddIcon,
+    Delete as DeleteIcon,
+    Edit as EditIcon,
+    Search as SearchIcon,
 } from "@mui/icons-material";
 import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Pagination,
-  Select,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    FormControl,
+    IconButton,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Pagination,
+    Select,
+    Stack,
+    TextField,
+    Tooltip,
+    Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { deleteExam, getExams } from "../../actions/exam";
+import { deleteQuestion, getQuestions } from "../../actions/question";
 import AppLayout from "../../components/layout/AppLayout";
 import { paths } from "../../routes/paths";
-import type { ExamFilters, IExam } from "../../types/exam";
+import type { IQuestion, QuestionFilters } from "../../types/question";
 
-const ITEMS_PER_PAGE = 10;
+const DIFF_LABELS: Record<string, string> = {
+  easy: "Facil",
+  medium: "Media",
+  hard: "Dificil",
+};
 
-export function ExamPage() {
+const DIFF_COLORS: Record<string, "success" | "warning" | "error"> = {
+  easy: "success",
+  medium: "warning",
+  hard: "error",
+};
+
+export function QuestionListPage() {
   const navigate = useNavigate();
-  const [exams, setExams] = useState<IExam[]>([]);
+  const [questions, setQuestions] = useState<IQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState<ExamFilters>({
+  const [filters, setFilters] = useState<QuestionFilters>({
     page: 1,
-    limit: ITEMS_PER_PAGE,
+    limit: 10,
   });
 
-  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(total / 10);
 
   useEffect(() => {
-    fetchExams();
+    fetchQuestions();
   }, [filters]);
 
-  const fetchExams = async () => {
+  const fetchQuestions = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await getExams(filters);
-      setExams(res.data);
+      const res = await getQuestions(filters);
+      setQuestions(res.data);
       setTotal(res.total);
     } catch {
-      setError("Erro ao carregar provas.");
+      setError("Erro ao carregar questoes.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (exam: IExam) => {
-    if (!window.confirm(`Excluir a prova "${exam.title}"?`)) return;
+  const handleDelete = async (q: IQuestion) => {
+    if (!window.confirm("Excluir esta questao?")) return;
     try {
-      await deleteExam(exam.id);
-      fetchExams();
+      await deleteQuestion(q.id);
+      fetchQuestions();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Erro ao excluir prova.";
+      const msg = err?.response?.data?.message || "Erro ao excluir questao.";
       setError(msg);
     }
   };
@@ -85,21 +95,21 @@ export function ExamPage() {
           mb={3}
         >
           <Typography variant="h4" fontWeight={700}>
-            Minhas Provas
+            Banco de Questoes
           </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => navigate(paths.exams.create)}
+            onClick={() => navigate(paths.questions.create)}
           >
-            Nova Prova
+            Nova Questao
           </Button>
         </Stack>
 
         {/* Filters */}
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mb={3}>
           <TextField
-            placeholder="Buscar provas..."
+            placeholder="Buscar questoes..."
             size="small"
             sx={{ minWidth: 250 }}
             slotProps={{
@@ -117,30 +127,31 @@ export function ExamPage() {
             }
           />
           <TextField
-            placeholder="Filtrar por materia"
+            placeholder="Materia"
             size="small"
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: 160 }}
             value={filters.subject || ""}
             onChange={(e) =>
               setFilters((f) => ({ ...f, subject: e.target.value, page: 1 }))
             }
           />
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Status</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>Dificuldade</InputLabel>
             <Select
-              value={filters.status || ""}
-              label="Status"
+              value={filters.difficulty || ""}
+              label="Dificuldade"
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
-                  status: (e.target.value as ExamFilters["status"]) || undefined,
+                  difficulty: e.target.value || undefined,
                   page: 1,
                 }))
               }
             >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="draft">Rascunho</MenuItem>
-              <MenuItem value="finalized">Finalizada</MenuItem>
+              <MenuItem value="">Todas</MenuItem>
+              <MenuItem value="easy">Facil</MenuItem>
+              <MenuItem value="medium">Media</MenuItem>
+              <MenuItem value="hard">Dificil</MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -148,7 +159,7 @@ export function ExamPage() {
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
-            <Button size="small" onClick={fetchExams} sx={{ ml: 1 }}>
+            <Button size="small" onClick={fetchQuestions} sx={{ ml: 1 }}>
               Tentar novamente
             </Button>
           </Alert>
@@ -158,78 +169,83 @@ export function ExamPage() {
           <Box textAlign="center" py={6}>
             <CircularProgress />
           </Box>
-        ) : exams.length === 0 ? (
+        ) : questions.length === 0 ? (
           <Card>
             <CardContent sx={{ textAlign: "center", py: 6 }}>
               <Typography variant="h6" color="text.secondary" gutterBottom>
-                Nenhuma prova encontrada
+                Nenhuma questao encontrada
               </Typography>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => navigate(paths.exams.create)}
+                onClick={() => navigate(paths.questions.create)}
                 sx={{ mt: 1 }}
               >
-                Criar Primeira Prova
+                Criar Primeira Questao
               </Button>
             </CardContent>
           </Card>
         ) : (
           <>
             <Stack spacing={2}>
-              {exams.map((exam) => (
-                <Card
-                  key={exam.id}
-                  sx={{
-                    cursor: "pointer",
-                    "&:hover": { boxShadow: 3 },
-                    transition: "box-shadow 0.2s",
-                  }}
-                  onClick={() => navigate(paths.exams.details(exam.id))}
-                >
+              {questions.map((q) => (
+                <Card key={q.id}>
                   <CardContent sx={{ py: 2 }}>
                     <Stack
                       direction="row"
                       justifyContent="space-between"
-                      alignItems="center"
+                      alignItems="flex-start"
                     >
                       <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
-                          <Typography variant="subtitle1" fontWeight={600} noWrap>
-                            {exam.title}
-                          </Typography>
+                        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                          {q.statement}
+                        </Typography>
+                        <Stack direction="row" spacing={1} mb={1}>
+                          <Chip label={q.subject} size="small" color="primary" variant="outlined" />
                           <Chip
-                            label={exam.subject}
+                            label={DIFF_LABELS[q.difficulty] || q.difficulty}
                             size="small"
-                            color="primary"
+                            color={DIFF_COLORS[q.difficulty] || "default"}
                             variant="outlined"
                           />
+                          <Chip
+                            label={`${q.alternatives.length} alternativas`}
+                            size="small"
+                            variant="outlined"
+                          />
+                          {q.is_public && (
+                            <Chip label="Publica" size="small" color="info" variant="outlined" />
+                          )}
                         </Stack>
-                        <Typography variant="body2" color="text.secondary">
-                          {exam.questions?.length ?? 0} questoes •{" "}
-                          {new Date(exam.created_at).toLocaleDateString("pt-BR")}
-                        </Typography>
+                        <Stack spacing={0.25}>
+                          {q.alternatives.map((alt, idx) => (
+                            <Typography
+                              key={alt.id}
+                              variant="body2"
+                              sx={{
+                                color: alt.is_correct ? "success.main" : "text.secondary",
+                                fontWeight: alt.is_correct ? 600 : 400,
+                              }}
+                            >
+                              {String.fromCharCode(65 + idx)}) {alt.text}
+                            </Typography>
+                          ))}
+                        </Stack>
                       </Box>
                       <Stack direction="row" spacing={0.5}>
-                        <Tooltip title="Ver detalhes">
+                        <Tooltip title="Editar">
                           <IconButton
                             size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(paths.exams.details(exam.id));
-                            }}
+                            onClick={() => navigate(paths.questions.edit(q.id))}
                           >
-                            <ViewIcon fontSize="small" />
+                            <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Excluir">
                           <IconButton
                             size="small"
                             color="error"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(exam);
-                            }}
+                            onClick={() => handleDelete(q)}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>

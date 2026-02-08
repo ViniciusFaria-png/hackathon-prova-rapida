@@ -5,6 +5,7 @@ import { answerKey } from "./answer-key";
 import { create } from "./create";
 import { remove } from "./delete";
 import { duplicate } from "./duplicate";
+import { ecoModes } from "./eco-modes";
 import { exportPdf } from "./export-pdf";
 import { finalize } from "./finalize";
 import { findAll } from "./find-all";
@@ -35,12 +36,15 @@ export async function examRoutes(app: FastifyInstance) {
   app.get("/exams/:id/preview", preview);
   app.post("/exams/:id/duplicate", duplicate);
 
-  app.post("/exams/:id/export", exportPdf);
-  app.post("/exams/:id/answer-key", answerKey);
+  app.get("/exams/:id/export", exportPdf);
+  app.get("/exams/:id/answer-key", answerKey);
 
   app.post("/exams/:id/finalize", finalize);
   app.post("/exams/:id/generate-versions", generateVersions);
 
   app.get("/exams/:id/stats", stats);
   app.post("/exams/:id/validate", validate);
+
+  // Eco mode — lista os modos de economia disponíveis
+  app.get("/exams/eco-modes", ecoModes);
 }
