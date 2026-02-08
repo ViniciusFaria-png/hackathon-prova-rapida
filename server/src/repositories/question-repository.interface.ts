@@ -4,7 +4,7 @@ export interface CreateQuestionDTO {
     statement: string;
     subject: string;
     difficulty?: string;
-    userId?: string; // null para questões públicas
+    userId?: string;
     isPublic: boolean;
     alternatives: Array<{
         text: string;

@@ -125,7 +125,6 @@ export async function generateExamVersions(examId: string, count: number) {
     `${endpoints.exams}/${examId}/generate-versions`,
     { count },
   );
-  // Backend returns { versionId, seed, label }[] - map to IExamVersion format
   const raw = res.data.data as Array<{ versionId: string; seed: number; label: string }>;
   return raw.map((v) => ({
     id: v.versionId,

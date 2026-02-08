@@ -14,7 +14,6 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
 
   const examRepository = new PGExamRepository();
 
-  // Check ownership
   const exam = await examRepository.findById(id);
   if (exam && exam.user_id !== userId) {
     throw new ForbiddenError("Você não tem permissão para excluir esta prova.");

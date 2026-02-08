@@ -47,6 +47,5 @@ export async function examRoutes(app: FastifyInstance) {
   app.get("/exams/:id/stats", stats);
   app.post("/exams/:id/validate", validate);
 
-  // Eco mode — lista os modos de economia disponíveis
   app.get("/exams/eco-modes", ecoModes);
 }

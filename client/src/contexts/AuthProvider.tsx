@@ -37,7 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         const savedUserData = localStorage.getItem("userData");
         if (savedUserData) {
-          // If stored userData exists but lacks the name (older sessions), refresh from API
           const parsed = JSON.parse(savedUserData) as Partial<User>;
           if (parsed.name) {
             setUser(parsed as User);

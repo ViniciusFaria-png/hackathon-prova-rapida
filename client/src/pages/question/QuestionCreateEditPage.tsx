@@ -83,10 +83,9 @@ export function QuestionCreateEditPage() {
           isCorrect: a.is_correct,
         })),
       );
-      // If the question belongs to another user, switch to copy mode
       if (user && q.user_id && q.user_id !== user.id) {
         setIsCopy(true);
-        setIsPublic(false); // Copy is private by default
+        setIsPublic(false);
       }
     } catch {
       setError("Erro ao carregar questao.");
@@ -120,7 +119,6 @@ export function QuestionCreateEditPage() {
     value: string | boolean,
   ) => {
     if (field === "isCorrect" && value === true) {
-      // Radio-button logic: only ONE alternative can be correct
       setAlternatives(
         alternatives.map((alt, i) => ({ ...alt, isCorrect: i === index })),
       );
@@ -155,7 +153,6 @@ export function QuestionCreateEditPage() {
 
       if (isEditing && !isCopy) {
         await updateQuestion(id!, { statement, subject, difficulty, isPublic });
-        // Update existing alternatives and create new ones
         for (const alt of alternatives) {
           if (alt.id) {
             await updateAlternative(alt.id, {
@@ -171,7 +168,6 @@ export function QuestionCreateEditPage() {
         }
         navigate(paths.questions.root);
       } else {
-        // Create mode or copy mode — always create a new question
         await createQuestion({
           statement,
           subject,

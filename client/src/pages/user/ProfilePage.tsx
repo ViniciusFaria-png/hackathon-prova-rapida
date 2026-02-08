@@ -36,20 +36,16 @@ export default function ProfilePage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Buscar dados frescos da API ao carregar a página
   useEffect(() => {
     const loadUserData = async () => {
       try {
         setLoading(true);
         const userData = await getCurrentUser();
-        console.log('[ProfilePage] User data from API:', userData);
         setProfileData({
           name: userData.name || "",
           email: userData.email || "",
         });
-        console.log('[ProfilePage] Profile data set to:', { name: userData.name, email: userData.email });
       } catch (err) {
-        console.error('[ProfilePage] Error loading user:', err);
         toast.error("Erro ao carregar dados do usuário");
       } finally {
         setLoading(false);
@@ -75,7 +71,6 @@ export default function ProfilePage() {
       setSavingProfile(true);
       const response = await updateProfile(profileData);
 
-      // Update local auth context
       if (response.user) {
         refreshUser(response.user);
       }

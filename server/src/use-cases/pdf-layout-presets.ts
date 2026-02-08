@@ -62,13 +62,11 @@ export interface PdfLayoutConfig {
   savingsEstimate: { paper: string; ink: string };
 }
 
-const PAGE_WIDTH_A4 = 595.28; // pontos
+const PAGE_WIDTH_A4 = 595.28;
 
 function contentWidth(margins: { left: number; right: number }): number {
   return PAGE_WIDTH_A4 - margins.left - margins.right;
 }
-
-// ─── Preset: Normal ─────────────────────────────────────────────────────────
 
 const normalMargins = { top: 60, bottom: 60, left: 50, right: 50 };
 
@@ -102,8 +100,6 @@ const NORMAL_PRESET: PdfLayoutConfig = {
   savingsEstimate: { paper: '0%', ink: '0%' },
 };
 
-// ─── Preset: Economia de Papel ──────────────────────────────────────────────
-
 const savePaperMargins = { top: 30, bottom: 30, left: 30, right: 30 };
 
 const SAVE_PAPER_PRESET: PdfLayoutConfig = {
@@ -136,15 +132,13 @@ const SAVE_PAPER_PRESET: PdfLayoutConfig = {
   savingsEstimate: { paper: '~30-40%', ink: '0%' },
 };
 
-// ─── Preset: Economia de Tinta ──────────────────────────────────────────────
-
 const saveInkMargins = { top: 60, bottom: 60, left: 50, right: 50 };
 
 const SAVE_INK_PRESET: PdfLayoutConfig = {
   pageSize: 'A4',
   margins: saveInkMargins,
   fontFamily: 'Helvetica',
-  fontFamilyBold: 'Helvetica',       // evita bold que gasta mais tinta
+  fontFamilyBold: 'Helvetica',
   fontSize: {
     title: 16,
     subtitle: 10,
@@ -153,11 +147,11 @@ const SAVE_INK_PRESET: PdfLayoutConfig = {
     header: 9,
     footer: 7.5,
   },
-  textColor: '#444444',              // cinza escuro ao invés de preto puro
+  textColor: '#444444',
   secondaryTextColor: '#777777',
   separatorColor: '#cccccc',
-  showSeparators: false,             // remove linhas decorativas
-  showAnswerHighlight: false,        // sem background colorido
+  showSeparators: false,
+  showAnswerHighlight: false,
   answerHighlightColor: 'transparent',
   answerTextColor: '#444444',
   questionSpacing: 0.5,
@@ -170,15 +164,13 @@ const SAVE_INK_PRESET: PdfLayoutConfig = {
   savingsEstimate: { paper: '0%', ink: '~25-35%' },
 };
 
-// ─── Preset: Economia Máxima (Papel + Tinta) ───────────────────────────────
-
 const ecoMaxMargins = { top: 25, bottom: 25, left: 25, right: 25 };
 
 const ECO_MAX_PRESET: PdfLayoutConfig = {
   pageSize: 'A4',
   margins: ecoMaxMargins,
   fontFamily: 'Helvetica',
-  fontFamilyBold: 'Helvetica',       // sem bold
+  fontFamilyBold: 'Helvetica',
   fontSize: {
     title: 12,
     subtitle: 8,
@@ -187,7 +179,7 @@ const ECO_MAX_PRESET: PdfLayoutConfig = {
     header: 7,
     footer: 6.5,
   },
-  textColor: '#555555',               // cinza médio, economiza tinta
+  textColor: '#555555',
   secondaryTextColor: '#888888',
   separatorColor: '#dddddd',
   showSeparators: false,
@@ -203,8 +195,6 @@ const ECO_MAX_PRESET: PdfLayoutConfig = {
   modeLabel: '♻️ Modo Economia Máxima',
   savingsEstimate: { paper: '~40-50%', ink: '~25-35%' },
 };
-
-// ─── Exportação ─────────────────────────────────────────────────────────────
 
 const accessibilityMargins = { top: 60, bottom: 60, left: 50, right: 50 };
 

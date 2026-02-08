@@ -68,7 +68,6 @@ export class GenerateAnswerKeyPdfUseCase {
       const leftEdge = layout.margins.left;
       const rightEdge = doc.page.width - layout.margins.right;
 
-      // Título
       doc.fontSize(layout.fontSize.title).font(layout.fontFamilyBold)
         .fillColor(layout.textColor)
         .text(title, { align: 'center' });
@@ -100,7 +99,6 @@ export class GenerateAnswerKeyPdfUseCase {
       }
       doc.moveDown(layout.questionSpacing + 0.3);
 
-      // Tabela de gabarito compacta
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const cols = 4;
       const colWidth = Math.floor(layout.contentWidth / cols);
@@ -109,7 +107,6 @@ export class GenerateAnswerKeyPdfUseCase {
       let currentX = startX;
       let currentY = doc.y;
 
-      // Cabeçalho da tabela
       doc.fontSize(layout.fontSize.alternative).font(layout.fontFamilyBold)
         .fillColor(layout.textColor);
       for (let c = 0; c < cols; c++) {
@@ -155,7 +152,6 @@ export class GenerateAnswerKeyPdfUseCase {
         currentX += colWidth;
       }
 
-      // Badge do modo eco
       if (layout.modeLabel) {
         doc.fontSize(layout.fontSize.footer).font(layout.fontFamily)
           .fillColor(layout.secondaryTextColor)

@@ -1,4 +1,17 @@
 import {
+    closestCenter,
+    DndContext,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
     ArrowBack,
     Delete as DeleteIcon,
     ContentCopy as DuplicateIcon,
@@ -38,9 +51,11 @@ import {
     getExamPreview,
     previewExamPdf,
     removeQuestionFromExam,
+    reorderExamQuestions,
     type PdfEcoMode,
 } from "../../actions/exam";
 import ExportPdfDialog from "../../components/ExportPdfDialog";
+import { SortableQuestionItem } from "../../components/SortableQuestionItem";
 import AppLayout from "../../components/layout/AppLayout";
 import { paths } from "../../routes/paths";
 import type { ExamPreview, IExam, IExamVersion } from "../../types/exam";
@@ -64,6 +79,14 @@ export function ExamDetailPage() {
   const [versionsCount, setVersionsCount] = useState(2);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [versions, setVersions] = useState<IExamVersion[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
 
   useEffect(() => {
     if (id) fetchExam();
@@ -104,7 +127,6 @@ export function ExamDetailPage() {
       setError(null);
       await previewExamPdf(id!, { ecoMode, versionId });
     } catch (err: any) {
-      console.error("Erro ao visualizar PDF:", err);
       const errorMsg = err?.response?.data?.message || err?.message || "Erro ao visualizar PDF. Verifique se a prova tem quest\u00f5es.";
       setError(errorMsg);
     } finally {
@@ -123,7 +145,6 @@ export function ExamDetailPage() {
       }
       setPdfOpen(false);
     } catch (err: any) {
-      console.error("Erro ao exportar PDF:", err);
       const errorMsg = err?.response?.data?.message || err?.message || "Erro ao exportar PDF. Verifique se a prova tem questões.";
       setError(errorMsg);
     } finally {
@@ -161,13 +182,38 @@ export function ExamDetailPage() {
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !exam) return;
+
+    const oldIndex = exam.questions.findIndex((q) => q.id === active.id);
+    const newIndex = exam.questions.findIndex((q) => q.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(exam.questions, oldIndex, newIndex);
+
+    setExam({ ...exam, questions: reordered });
+
+    try {
+      const reorderPayload = reordered.map((q, idx) => ({
+        questionId: q.id,
+        position: idx + 1,
+      }));
+      await reorderExamQuestions(id!, reorderPayload);
+    } catch {
+      setError("Erro ao reordenar questoes. Recarregando...");
+      fetchExam();
+    }
+  };
+
   const handleGenerateVersions = async () => {
     try {
       setVersionsLoading(true);
       const data = await generateExamVersions(id!, versionsCount);
       setVersions(data);
       setVersionsOpen(false);
-      // Reload exam to get updated finalized status
       fetchExam();
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Erro ao gerar versoes embaralhadas.";
@@ -310,60 +356,40 @@ export function ExamDetailPage() {
         )}
 
         {/* Questions list */}
-        <Typography variant="h6" fontWeight={600} mb={2}>
-          Questoes da Prova
-        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h6" fontWeight={600}>
+            Questoes da Prova
+          </Typography>
+          {!exam.is_finalized && exam.questions && exam.questions.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              Arraste para reordenar
+            </Typography>
+          )}
+        </Stack>
 
         {exam.questions && exam.questions.length > 0 ? (
-          <Stack spacing={2}>
-            {exam.questions
-              .sort((a, b) => a.position - b.position)
-              .map((q, idx) => (
-                <Card key={q.id}>
-                  <CardContent>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                    >
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                          {idx + 1}. {q.statement}
-                        </Typography>
-                        <Stack spacing={0.5} mt={1}>
-                          {q.alternatives.map((alt, altIdx) => (
-                            <Typography
-                              key={alt.id}
-                              variant="body2"
-                              sx={{
-                                color: alt.is_correct
-                                  ? "success.main"
-                                  : "text.secondary",
-                                fontWeight: alt.is_correct ? 600 : 400,
-                              }}
-                            >
-                              {String.fromCharCode(65 + altIdx)}) {alt.text}
-                              {alt.is_correct && " (correta)"}
-                            </Typography>
-                          ))}
-                        </Stack>
-                      </Box>
-                      {!exam.is_finalized && (
-                        <Tooltip title="Remover da prova">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleRemoveQuestion(q.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-          </Stack>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={exam.questions.map((q) => q.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Stack spacing={2}>
+                {exam.questions.map((q, idx) => (
+                  <SortableQuestionItem
+                    key={q.id}
+                    question={q}
+                    index={idx}
+                    isFinalized={exam.is_finalized ?? false}
+                    onRemove={handleRemoveQuestion}
+                  />
+                ))}
+              </Stack>
+            </SortableContext>
+          </DndContext>
         ) : (
           <Card>
             <CardContent sx={{ textAlign: "center", py: 4 }}>

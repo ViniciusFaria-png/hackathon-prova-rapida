@@ -16,7 +16,6 @@ export class ExportExamPdfUseCase {
 
   async handler(options: ExportOptions): Promise<Buffer> {
     try {
-      console.log('Iniciando exportação de PDF com opções:', options);
       const { examId, versionId, includeAnswerKey, ecoMode = 'normal' } = options;
       const layout = getPdfLayoutConfig(ecoMode);
 
@@ -32,7 +31,6 @@ export class ExportExamPdfUseCase {
       }>;
 
       if (versionId) {
-        console.log('Buscando versão:', versionId);
         const version = await this.examRepository.findVersionById(versionId);
         if (!version) throw new ResourceNotFoundError();
         
@@ -44,28 +42,22 @@ export class ExportExamPdfUseCase {
         versionLabel = version.version_name;
         questions = version.questions;
       } else {
-        console.log('Buscando prova:', examId);
         const exam = await this.examRepository.findById(examId);
         if (!exam) {
-          console.error('Prova não encontrada:', examId);
           throw new ResourceNotFoundError();
         }
         
-        console.log('Prova encontrada:', { title: exam.title, questionsCount: exam.questions?.length || 0 });
         title = exam.title;
         subject = exam.subject;
         questions = exam.questions;
       }
 
       if (!questions || questions.length === 0) {
-        console.error('Prova sem questões!');
         throw new Error('A prova não possui questões para exportar.');
       }
 
-      console.log(`Gerando PDF com ${questions.length} questões`);
       return this.generatePDF(title, subject, versionLabel, questions, includeAnswerKey || false, layout);
     } catch (error) {
-      console.error('Erro no handler de exportação:', error);
       throw error;
     }
   }
@@ -86,7 +78,6 @@ export class ExportExamPdfUseCase {
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
-        console.log('Criando documento PDF...');
         const doc = new PDFDocument({
           size: layout.pageSize as string,
           margins: layout.margins,
@@ -95,11 +86,9 @@ export class ExportExamPdfUseCase {
         const buffers: Buffer[] = [];
         doc.on('data', (chunk: Buffer) => buffers.push(chunk));
         doc.on('end', () => {
-          console.log('PDF gerado com sucesso, tamanho:', Buffer.concat(buffers).length);
           resolve(Buffer.concat(buffers));
         });
         doc.on('error', (err: Error) => {
-          console.error('Erro no documento PDF:', err);
           reject(err);
         });
 
@@ -107,7 +96,6 @@ export class ExportExamPdfUseCase {
         const rightEdge = doc.page.width - layout.margins.right;
         const totalContentWidth = rightEdge - leftEdge;
 
-        console.log('Renderizando cabeçalho...');
         this.renderHeader(doc, title, subject, versionLabel, layout);
 
         if (includeAnswerKey) {
@@ -125,8 +113,7 @@ export class ExportExamPdfUseCase {
         }
         doc.moveDown(layout.questionSpacing + 0.2);
 
-        // ─── Column mode: 2 columns ONLY for save-paper / eco-max ─────
-        const useTwoColumns = layout.compactAlternatives; // true for save-paper & eco-max
+        const useTwoColumns = layout.compactAlternatives;
         const gutterWidth = useTwoColumns ? 18 : 0;
         const colWidth = useTwoColumns
           ? (totalContentWidth - gutterWidth) / 2
@@ -138,7 +125,6 @@ export class ExportExamPdfUseCase {
 
         let leftY = doc.y;
         let rightY = doc.y;
-        // In single-column mode, always stay on 'left'
         let currentCol: 'left' | 'right' = 'left';
 
         const estimateQuestionHeight = (q: typeof questions[0]): number => {
@@ -164,27 +150,20 @@ export class ExportExamPdfUseCase {
           const questionNumber = i + 1;
           const estimatedH = estimateQuestionHeight(q);
 
-          // Determine which column to place this question
-          // RULE: Fill left column COMPLETELY first, then right column
           if (!useTwoColumns) {
-            // Single column: just check if we need a new page
             if (leftY + estimatedH > pageBottom) {
               startNewPage();
             }
           } else if (currentCol === 'left') {
             if (leftY + estimatedH > pageBottom) {
-              // Left column full → switch to right column (same page)
               currentCol = 'right';
               if (rightY + estimatedH > pageBottom) {
-                // Right also full → new page, back to left
                 startNewPage();
                 currentCol = 'left';
               }
             }
           } else {
-            // We're in right column
             if (rightY + estimatedH > pageBottom) {
-              // Right column full → new page, back to left
               startNewPage();
               currentCol = 'left';
             }
@@ -193,7 +172,6 @@ export class ExportExamPdfUseCase {
           const colX = currentCol === 'left' ? leftColX : rightColX;
           const startY = currentCol === 'left' ? leftY : rightY;
 
-          // Question number + statement
           doc.fontSize(layout.fontSize.question).font(layout.fontFamilyBold)
             .fillColor(layout.textColor)
             .text(`${questionNumber}.`, colX, startY, { continued: true, width: colWidth - 5 })
@@ -202,7 +180,6 @@ export class ExportExamPdfUseCase {
 
           let cursorY = doc.y + (layout.compactAlternatives ? 1 : 3);
 
-          // Alternatives
           for (let j = 0; j < q.alternatives.length; j++) {
             const alt = q.alternatives[j];
             const letter = letters[j];
@@ -232,27 +209,22 @@ export class ExportExamPdfUseCase {
 
           cursorY += layout.questionSpacing * layout.fontSize.question;
 
-          // Separator between questions within the column
           if (layout.showSeparators) {
             doc.moveTo(colX, cursorY - 2).lineTo(colX + colWidth - 5, cursorY - 2).stroke(layout.separatorColor);
             cursorY += 4;
           }
 
-          // Update column Y position — SEQUENTIAL: fill left first, then right
           if (!useTwoColumns) {
             leftY = cursorY;
           } else if (currentCol === 'left') {
             leftY = cursorY;
-            // Stay in left column until it's full (don't switch early)
           } else {
             rightY = cursorY;
-            // Stay in right column until it's full
           }
         }
 
         doc.end();
       } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
         reject(error);
       }
     });
@@ -307,13 +279,11 @@ export class ExportExamPdfUseCase {
     const contentWidth = rightEdge - leftEdge;
     const fontSize = layout.fontSize.subtitle;
     
-    // Boxed student info — SINGLE LINE: Nome, Turma, Data side by side
     const boxPadding = 8;
     const lineHeight = fontSize + 8;
     const boxHeight = boxPadding * 2 + lineHeight;
     const boxY = doc.y;
     
-    // Draw the box
     doc.lineWidth(1)
       .rect(leftEdge, boxY, contentWidth, boxHeight)
       .stroke(layout.textColor);
@@ -321,7 +291,6 @@ export class ExportExamPdfUseCase {
     doc.fontSize(fontSize).font(layout.fontFamily)
       .fillColor(layout.textColor);
     
-    // Single row: Nome, Turma, Data ALL on the same line
     const rowY = boxY + boxPadding;
     const nomeW = contentWidth * 0.50;
     const turmaW = contentWidth * 0.24;
@@ -331,7 +300,6 @@ export class ExportExamPdfUseCase {
     doc.text('Turma:________', leftEdge + boxPadding + nomeW, rowY, { width: turmaW });
     doc.text('Data: ___/___/___', leftEdge + boxPadding + nomeW + turmaW, rowY, { width: dataW });
     
-    // Move doc.y past the box
     doc.y = boxY + boxHeight + 4;
     doc.moveDown(layout.headerSpacing * 0.5);
   }

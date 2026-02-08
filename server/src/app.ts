@@ -24,7 +24,6 @@ app.register(cors, {
 
 app.setErrorHandler(globalErrorHandler);
 
-// Registrar rotas
 app.register(userRoutes);
 app.register(questionRoutes);
 app.register(examRoutes);

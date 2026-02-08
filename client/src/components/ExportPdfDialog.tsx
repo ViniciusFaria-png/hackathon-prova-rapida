@@ -1,9 +1,9 @@
 import {
     Accessibility as AccessibilityIcon,
     EnergySavingsLeaf as EcoIcon,
-    PictureAsPdf as PdfIcon,
     Print as InkIcon,
     Description as PaperIcon,
+    PictureAsPdf as PdfIcon,
     RecyclingOutlined as RecycleIcon,
 } from "@mui/icons-material";
 import {

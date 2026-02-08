@@ -67,7 +67,6 @@ export class PGQuestionRepository implements IQuestionRepository {
             params.push(filters.isPublic);
         }
 
-        // Filter: show public questions OR private questions created by current user
         if (filters.currentUserId) {
             whereClause += ` AND (q.is_public = true OR (q.is_public = false AND q.user_id = $${paramCount++}))`;
             params.push(filters.currentUserId);

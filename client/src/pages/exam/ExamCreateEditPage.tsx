@@ -1,37 +1,37 @@
 import { ArrowBack, CheckCircle as ConfirmIcon, Search as SearchIcon, Visibility } from "@mui/icons-material";
 import {
-    Alert,
-    Badge,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Checkbox,
-    Chip,
-    CircularProgress,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    Divider,
-    FormControl,
-    IconButton,
-    InputAdornment,
-    InputLabel,
-    MenuItem,
-    Pagination,
-    Select,
-    Stack,
-    TextField,
-    Typography,
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Pagination,
+  Select,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
-    addQuestionsToExamBatch,
-    createExam,
-    getExamById,
-    removeQuestionFromExam,
-    updateExam,
+  addQuestionsToExamBatch,
+  createExam,
+  getExamById,
+  removeQuestionFromExam,
+  updateExam,
 } from "../../actions/exam";
 import { getQuestions } from "../../actions/question";
 import AppLayout from "../../components/layout/AppLayout";
@@ -56,7 +56,6 @@ export function ExamCreateEditPage() {
   const [error, setError] = useState<string | null>(null);
   const [exam, setExam] = useState<IExam | null>(null);
 
-  // Question bank
   const [questions, setQuestions] = useState<IQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [totalQuestions, setTotalQuestions] = useState(0);
@@ -124,16 +123,13 @@ export function ExamCreateEditPage() {
       setError(null);
       setSuccess(null);
       if (isEditing) {
-        const response = await updateExam(id!, { title, subject });
-        console.log('RESPOSTA COMPLETA AO SALVAR:', response);
+        await updateExam(id!, { title, subject });
         navigate(paths.exams.details(id!));
       } else {
         const result = await createExam({ title, subject });
-        console.log('RESPOSTA COMPLETA AO CRIAR:', result);
         navigate(paths.exams.details(result.id));
       }
     } catch (err: any) {
-      console.error('ERRO AO SALVAR PROVA:', err?.response?.status, err?.response?.data);
       setError(err?.response?.data?.message || "Erro ao salvar prova.");
     } finally {
       setSaving(false);
@@ -148,27 +144,22 @@ export function ExamCreateEditPage() {
     const isPendingAdd = pendingAdditions.has(questionId);
 
     if (isCurrentlyInExam || isPendingAdd) {
-      // User wants to remove
       if (isPendingAdd) {
-        // Was pending addition — just undo the pending add
         setPendingAdditions((prev) => {
           const next = new Set(prev);
           next.delete(questionId);
           return next;
         });
       } else {
-        // Already persisted — mark for removal
         setPendingRemovals((prev) => new Set(prev).add(questionId));
       }
     } else if (pendingRemovals.has(questionId)) {
-      // Was pending removal — undo
       setPendingRemovals((prev) => {
         const next = new Set(prev);
         next.delete(questionId);
         return next;
       });
     } else {
-      // New addition
       setPendingAdditions((prev) => new Set(prev).add(questionId));
     }
   }, [id, selectedQuestionIds, pendingAdditions, pendingRemovals]);
@@ -188,12 +179,10 @@ export function ExamCreateEditPage() {
       setError(null);
       setSuccess(null);
 
-      // Process removals
       for (const questionId of pendingRemovals) {
         await removeQuestionFromExam(id, questionId);
       }
 
-      // Process additions in batch
       if (pendingAdditions.size > 0) {
         const basePosition = selectedQuestionIds.size - pendingRemovals.size;
         const questionsToAdd = Array.from(pendingAdditions).map((qId, idx) => ({

@@ -53,7 +53,6 @@ export const globalErrorHandler = (
 
   if (handler) return handler(error, _, reply);
 
-  // Handle TypeError (e.g. "compare is not a function") and other runtime errors
   if (error instanceof TypeError) {
     return reply.status(500).send({
       success: false,

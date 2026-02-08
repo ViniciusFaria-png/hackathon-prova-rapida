@@ -11,14 +11,11 @@ export class ShuffleExamUseCase {
       throw new ResourceNotFoundError();
     }
 
-    // Gerar seed aleatório
     const shuffleSeed = Math.floor(Math.random() * 10000);
 
-    // Embaralhar questões
     const questions = [...exam.questions];
     const shuffledQuestions = this.shuffleArray(questions, shuffleSeed);
 
-    // Criar nova ordenação
     const questionPositions = shuffledQuestions.map((q, index) => ({
       questionId: q.id,
       position: index + 1
@@ -39,7 +36,6 @@ export class ShuffleExamUseCase {
     let currentIndex = shuffled.length;
     let randomIndex;
 
-    // Seeded random usando seed fornecido
     const seededRandom = (seed: number) => {
       const x = Math.sin(seed++) * 10000;
       return x - Math.floor(x);
