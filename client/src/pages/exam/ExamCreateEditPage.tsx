@@ -1,6 +1,7 @@
-import { ArrowBack, Search as SearchIcon, Visibility } from "@mui/icons-material";
+import { ArrowBack, CheckCircle as ConfirmIcon, Search as SearchIcon, Visibility } from "@mui/icons-material";
 import {
     Alert,
+    Badge,
     Box,
     Button,
     Card,
@@ -23,10 +24,10 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
-    addQuestionToExam,
+    addQuestionsToExamBatch,
     createExam,
     getExamById,
     removeQuestionFromExam,
@@ -66,6 +67,9 @@ export function ExamCreateEditPage() {
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Set<string>>(
     new Set(),
   );
+  const [pendingAdditions, setPendingAdditions] = useState<Set<string>>(new Set());
+  const [pendingRemovals, setPendingRemovals] = useState<Set<string>>(new Set());
+  const [batchSaving, setBatchSaving] = useState(false);
   const [viewingQuestion, setViewingQuestion] = useState<IQuestion | null>(null);
 
   useEffect(() => {
@@ -87,6 +91,8 @@ export function ExamCreateEditPage() {
       setTitle(data.title);
       setSubject(data.subject);
       setSelectedQuestionIds(new Set(data.questions.map((q) => q.id)));
+      setPendingAdditions(new Set());
+      setPendingRemovals(new Set());
     } catch {
       setError("Erro ao carregar prova.");
     }
@@ -134,37 +140,77 @@ export function ExamCreateEditPage() {
     }
   };
 
-  const handleToggleQuestion = async (questionId: string) => {
+  const handleToggleQuestion = useCallback((questionId: string, e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!id) return;
-    const isRemoving = selectedQuestionIds.has(questionId);
-    try {
-      setError(null);
-      setSuccess(null);
-      if (isRemoving) {
-        await removeQuestionFromExam(id, questionId);
-        console.log('Questao removida com sucesso, status: OK');
-        setSelectedQuestionIds((prev) => {
+
+    const isCurrentlyInExam = selectedQuestionIds.has(questionId) && !pendingRemovals.has(questionId);
+    const isPendingAdd = pendingAdditions.has(questionId);
+
+    if (isCurrentlyInExam || isPendingAdd) {
+      // User wants to remove
+      if (isPendingAdd) {
+        // Was pending addition — just undo the pending add
+        setPendingAdditions((prev) => {
           const next = new Set(prev);
           next.delete(questionId);
           return next;
         });
-        setSuccess("Questao removida da prova com sucesso!");
       } else {
-        const position = selectedQuestionIds.size + 1;
-        await addQuestionToExam(id, questionId, position);
-        console.log('Questao adicionada com sucesso, status: OK');
-        setSelectedQuestionIds((prev) => new Set(prev).add(questionId));
-        setSuccess("Questao adicionada a prova com sucesso!");
+        // Already persisted — mark for removal
+        setPendingRemovals((prev) => new Set(prev).add(questionId));
       }
-      // Reload exam separately - don't let load failures mask toggle success
-      try {
-        await loadExam();
-      } catch {
-        // Toggle succeeded, just failed to reload - ignore
+    } else if (pendingRemovals.has(questionId)) {
+      // Was pending removal — undo
+      setPendingRemovals((prev) => {
+        const next = new Set(prev);
+        next.delete(questionId);
+        return next;
+      });
+    } else {
+      // New addition
+      setPendingAdditions((prev) => new Set(prev).add(questionId));
+    }
+  }, [id, selectedQuestionIds, pendingAdditions, pendingRemovals]);
+
+  const isQuestionSelected = useCallback((questionId: string): boolean => {
+    if (pendingRemovals.has(questionId)) return false;
+    if (pendingAdditions.has(questionId)) return true;
+    return selectedQuestionIds.has(questionId);
+  }, [selectedQuestionIds, pendingAdditions, pendingRemovals]);
+
+  const pendingChangesCount = pendingAdditions.size + pendingRemovals.size;
+
+  const handleConfirmBatch = async () => {
+    if (!id) return;
+    try {
+      setBatchSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      // Process removals
+      for (const questionId of pendingRemovals) {
+        await removeQuestionFromExam(id, questionId);
       }
+
+      // Process additions in batch
+      if (pendingAdditions.size > 0) {
+        const basePosition = selectedQuestionIds.size - pendingRemovals.size;
+        const questionsToAdd = Array.from(pendingAdditions).map((qId, idx) => ({
+          questionId: qId,
+          position: basePosition + idx + 1,
+        }));
+        await addQuestionsToExamBatch(id, questionsToAdd);
+      }
+
+      setSuccess(`${pendingAdditions.size} adicionada(s), ${pendingRemovals.size} removida(s) com sucesso!`);
+      setPendingAdditions(new Set());
+      setPendingRemovals(new Set());
+      await loadExam();
     } catch (err: any) {
-      console.error('ERRO AO TOGGLE QUESTAO:', err?.response?.status, err?.response?.data);
-      setError(err?.response?.data?.message || "Erro ao atualizar questoes da prova.");
+      setError(err?.response?.data?.message || "Erro ao confirmar alterações.");
+    } finally {
+      setBatchSaving(false);
     }
   };
 
@@ -250,6 +296,27 @@ export function ExamCreateEditPage() {
               estao marcadas.
             </Typography>
 
+            {pendingChangesCount > 0 && (
+              <Stack direction="row" spacing={2} mb={2} alignItems="center">
+                <Badge badgeContent={pendingChangesCount} color="primary">
+                  <Chip
+                    label={`${pendingAdditions.size} a adicionar, ${pendingRemovals.size} a remover`}
+                    color="info"
+                    variant="outlined"
+                  />
+                </Badge>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={batchSaving ? <CircularProgress size={16} /> : <ConfirmIcon />}
+                  onClick={handleConfirmBatch}
+                  disabled={batchSaving}
+                >
+                  {batchSaving ? "Salvando..." : "Confirmar Alterações"}
+                </Button>
+              </Stack>
+            )}
+
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2} mb={3}>
               <TextField
                 placeholder="Buscar questoes..."
@@ -321,28 +388,26 @@ export function ExamCreateEditPage() {
             ) : (
               <>
                 <Stack spacing={1.5}>
-                  {questions.map((q) => {
-                    const isSelected = selectedQuestionIds.has(q.id);
-                    return (
+                  {questions.map((q) => (
                       <Card
                         key={q.id}
                         variant="outlined"
                         sx={{
-                          borderColor: isSelected ? "primary.main" : "divider",
-                          bgcolor: isSelected ? "primary.main" + "08" : "transparent",
+                          borderColor: isQuestionSelected(q.id) ? "primary.main" : "divider",
+                          bgcolor: isQuestionSelected(q.id) ? "primary.main" + "08" : "transparent",
                         }}
                       >
                         <CardContent sx={{ py: 1.5 }}>
                           <Stack direction="row" alignItems="flex-start" spacing={1}>
                             <Checkbox
-                              checked={isSelected}
+                              checked={isQuestionSelected(q.id)}
                               size="small"
                               sx={{ mt: -0.5 }}
-                              onClick={() => handleToggleQuestion(q.id)}
+                              onClick={(e) => handleToggleQuestion(q.id, e)}
                             />
                             <Box
                               sx={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-                              onClick={() => handleToggleQuestion(q.id)}
+                              onClick={(e) => handleToggleQuestion(q.id, e)}
                             >
                               <Typography variant="body1" noWrap>
                                 {q.statement}
@@ -385,8 +450,7 @@ export function ExamCreateEditPage() {
                           </Stack>
                         </CardContent>
                       </Card>
-                    );
-                  })}
+                  ))}
                 </Stack>
 
                 {Math.ceil(totalQuestions / 10) > 1 && (
@@ -496,7 +560,7 @@ export function ExamCreateEditPage() {
                       setViewingQuestion(null);
                     }}
                   >
-                    {selectedQuestionIds.has(viewingQuestion.id) ? "Remover" : "Adicionar"}
+                    {isQuestionSelected(viewingQuestion.id) ? "Remover" : "Adicionar"}
                   </Button>
                 </Stack>
               </Stack>

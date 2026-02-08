@@ -1,5 +1,7 @@
 import {
+    Accessibility as AccessibilityIcon,
     EnergySavingsLeaf as EcoIcon,
+    PictureAsPdf as PdfIcon,
     Print as InkIcon,
     Description as PaperIcon,
     RecyclingOutlined as RecycleIcon,
@@ -15,11 +17,16 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
     Stack,
     Typography,
 } from "@mui/material";
 import { useState } from "react";
 import type { PdfEcoMode } from "../actions/exam";
+import type { IExamVersion } from "../types/exam";
 
 interface EcoModeOption {
   mode: PdfEcoMode;
@@ -71,15 +78,26 @@ const ECO_MODE_OPTIONS: EcoModeOption[] = [
     inkSavings: "~25-35%",
     color: "#9c27b0",
   },
+  {
+    mode: "accessibility",
+    label: "Modo Acessibilidade",
+    description:
+      "Fonte grande (16px mínimo), espaçamento 1.5 entre linhas. Ideal para alunos com baixa visão.",
+    icon: <AccessibilityIcon fontSize="large" />,
+    paperSavings: "0%",
+    inkSavings: "0%",
+    color: "#0288d1",
+  },
 ];
 
 interface ExportPdfDialogProps {
   open: boolean;
   onClose: () => void;
-  onExport: (ecoMode: PdfEcoMode, includeAnswerKey: boolean) => void;
-  onPreview: (ecoMode: PdfEcoMode) => void;
+  onExport: (ecoMode: PdfEcoMode, includeAnswerKey: boolean, versionId?: string) => void;
+  onPreview: (ecoMode: PdfEcoMode, versionId?: string) => void;
   loading?: boolean;
   examTitle?: string;
+  versions?: IExamVersion[];
 }
 
 export default function ExportPdfDialog({
@@ -89,26 +107,28 @@ export default function ExportPdfDialog({
   onPreview,
   loading = false,
   examTitle,
+  versions = [],
 }: ExportPdfDialogProps) {
   const [selectedMode, setSelectedMode] = useState<PdfEcoMode>("normal");
+  const [selectedVersionId, setSelectedVersionId] = useState<string>("");
 
   const handlePreview = () => {
-    onPreview(selectedMode);
+    onPreview(selectedMode, selectedVersionId || undefined);
   };
 
   const handleExportExam = () => {
-    onExport(selectedMode, false);
+    onExport(selectedMode, false, selectedVersionId || undefined);
   };
 
   const handleExportAnswerKey = () => {
-    onExport(selectedMode, true);
+    onExport(selectedMode, true, selectedVersionId || undefined);
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <EcoIcon color="success" />
+          <PdfIcon color="error" />
           <Box>
             <Typography variant="h6" component="span">
               Exportar PDF
@@ -123,6 +143,24 @@ export default function ExportPdfDialog({
       </DialogTitle>
 
       <DialogContent>
+        {versions.length > 0 && (
+          <FormControl fullWidth size="small" sx={{ mt: 1, mb: 2 }}>
+            <InputLabel>Versão</InputLabel>
+            <Select
+              value={selectedVersionId}
+              label="Versão"
+              onChange={(e) => setSelectedVersionId(e.target.value)}
+            >
+              <MenuItem value="">Original</MenuItem>
+              {versions.map((v) => (
+                <MenuItem key={v.id} value={v.id}>
+                  {v.version_name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         <Typography variant="subtitle2" gutterBottom sx={{ mt: 1, mb: 2 }}>
           Escolha o modo de impressão:
         </Typography>
@@ -232,7 +270,7 @@ export default function ExportPdfDialog({
           variant="contained"
           onClick={handleExportExam}
           disabled={loading}
-          startIcon={<EcoIcon />}
+          startIcon={<PdfIcon />}
         >
           {loading ? "Gerando..." : "Exportar Prova"}
         </Button>

@@ -10,7 +10,7 @@ export async function answerKey(request: FastifyRequest, reply: FastifyReply) {
 
   const querySchema = z.object({
     versionId: z.string().uuid().optional(),
-    ecoMode: z.enum(['normal', 'save-paper', 'save-ink', 'eco-max']).optional().default('normal'),
+    ecoMode: z.enum(['normal', 'save-paper', 'save-ink', 'eco-max', 'accessibility']).optional().default('normal'),
   });
 
   const { id: examId } = paramsSchema.parse(request.params);

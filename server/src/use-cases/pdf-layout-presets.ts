@@ -10,7 +10,7 @@
  * - eco-max:     combinação de save-paper + save-ink para economia máxima
  */
 
-export type PdfEcoMode = 'normal' | 'save-paper' | 'save-ink' | 'eco-max';
+export type PdfEcoMode = 'normal' | 'save-paper' | 'save-ink' | 'eco-max' | 'accessibility';
 
 export interface PdfLayoutConfig {
   /** Tamanho da página */
@@ -206,11 +206,37 @@ const ECO_MAX_PRESET: PdfLayoutConfig = {
 
 // ─── Exportação ─────────────────────────────────────────────────────────────
 
+const accessibilityMargins = { top: 60, bottom: 60, left: 50, right: 50 };
+
+const ACCESSIBILITY_PRESET: PdfLayoutConfig = {
+  pageSize: 'A4',
+  margins: accessibilityMargins,
+  fontFamily: 'Helvetica',
+  fontFamilyBold: 'Helvetica-Bold',
+  fontSize: { title: 22, subtitle: 16, question: 16, alternative: 16, header: 14, footer: 12 },
+  textColor: '#000000',
+  secondaryTextColor: '#333333',
+  separatorColor: '#999999',
+  showSeparators: true,
+  showAnswerHighlight: true,
+  answerHighlightColor: '#e8f5e9',
+  answerTextColor: '#2e7d32',
+  questionSpacing: 1.5,
+  alternativeSpacing: 0.5,
+  headerSpacing: 1,
+  alternativeIndent: 60,
+  contentWidth: contentWidth(accessibilityMargins),
+  compactAlternatives: false,
+  modeLabel: '',
+  savingsEstimate: { paper: '0%', ink: '0%' },
+};
+
 const PRESETS: Record<PdfEcoMode, PdfLayoutConfig> = {
   'normal': NORMAL_PRESET,
   'save-paper': SAVE_PAPER_PRESET,
   'save-ink': SAVE_INK_PRESET,
   'eco-max': ECO_MAX_PRESET,
+  'accessibility': ACCESSIBILITY_PRESET,
 };
 
 export function getPdfLayoutConfig(mode: PdfEcoMode): PdfLayoutConfig {
@@ -242,6 +268,12 @@ export function getAllPdfModes(): Array<{ mode: PdfEcoMode; label: string; descr
       label: 'Economia Máxima',
       description: 'Combina economia de papel e tinta. Ideal para escolas com orçamento limitado.',
       savings: { paper: '~40-50%', ink: '~25-35%' },
+    },
+    {
+      mode: 'accessibility',
+      label: 'Modo Acessibilidade',
+      description: 'Fonte grande (16px mínimo), espaçamento 1.5 entre linhas. Ideal para alunos com baixa visão.',
+      savings: { paper: '0%', ink: '0%' },
     },
   ];
 }

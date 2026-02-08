@@ -12,7 +12,7 @@ export async function exportPdf(request: FastifyRequest, reply: FastifyReply) {
   const querySchema = z.object({
     versionId: z.string().uuid().optional(),
     includeAnswerKey: z.string().optional().transform(val => val === 'true'),
-    ecoMode: z.enum(['normal', 'save-paper', 'save-ink', 'eco-max']).optional().default('normal'),
+    ecoMode: z.enum(['normal', 'save-paper', 'save-ink', 'eco-max', 'accessibility']).optional().default('normal'),
   });
 
   try {

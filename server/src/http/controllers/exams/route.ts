@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { jwtAuth } from "../../middleware/jwt-auth";
 import { addQuestion } from "./add-question";
 import { answerKey } from "./answer-key";
+import { batchAddQuestions } from "./batch-add-questions";
 import { create } from "./create";
 import { remove } from "./delete";
 import { duplicate } from "./duplicate";
@@ -29,6 +30,7 @@ export async function examRoutes(app: FastifyInstance) {
   app.delete("/exams/:id", remove);
   
   app.post("/exams/:id/questions", addQuestion);
+  app.post("/exams/:id/questions/batch", batchAddQuestions);
   app.delete("/exams/:id/questions/:questionId", removeQuestion);
   app.put("/exams/:id/questions/reorder", reorder);
   

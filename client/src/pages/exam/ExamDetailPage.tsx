@@ -75,6 +75,9 @@ export function ExamDetailPage() {
       setError(null);
       const data = await getExamById(id!);
       setExam(data);
+      if (data.versions && data.versions.length > 0) {
+        setVersions(data.versions);
+      }
     } catch {
       setError("Erro ao carregar prova.");
     } finally {
@@ -95,11 +98,11 @@ export function ExamDetailPage() {
     }
   };
 
-  const handlePreviewPdf = async (ecoMode: PdfEcoMode) => {
+  const handlePreviewPdf = async (ecoMode: PdfEcoMode, versionId?: string) => {
     try {
       setPdfLoading(true);
       setError(null);
-      await previewExamPdf(id!, { ecoMode });
+      await previewExamPdf(id!, { ecoMode, versionId });
     } catch (err: any) {
       console.error("Erro ao visualizar PDF:", err);
       const errorMsg = err?.response?.data?.message || err?.message || "Erro ao visualizar PDF. Verifique se a prova tem quest\u00f5es.";
@@ -109,14 +112,14 @@ export function ExamDetailPage() {
     }
   };
 
-  const handleExportPdf = async (ecoMode: PdfEcoMode, isAnswerKey: boolean) => {
+  const handleExportPdf = async (ecoMode: PdfEcoMode, isAnswerKey: boolean, versionId?: string) => {
     try {
       setPdfLoading(true);
       setError(null);
       if (isAnswerKey) {
-        await exportAnswerKeyPdf(id!, { ecoMode });
+        await exportAnswerKeyPdf(id!, { ecoMode, versionId });
       } else {
-        await exportExamPdf(id!, { ecoMode });
+        await exportExamPdf(id!, { ecoMode, versionId });
       }
       setPdfOpen(false);
     } catch (err: any) {
@@ -419,6 +422,7 @@ export function ExamDetailPage() {
           onPreview={handlePreviewPdf}
           loading={pdfLoading}
           examTitle={exam.title}
+          versions={versions}
         />
 
         {/* Generate versions dialog */}

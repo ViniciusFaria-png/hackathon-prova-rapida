@@ -53,8 +53,14 @@ export class PGExamRepository implements IExamRepository {
 
         const result = await db.query(query, paginatedParams);
 
+        const data = result.rows.map((row: any) => ({
+            ...row,
+            questions_count: Number.parseInt(row.question_count, 10) || 0,
+            finalized_versions_count: Number.parseInt(row.finalized_versions, 10) || 0,
+        }));
+
         return {
-            data: result.rows,
+            data,
             total,
             page,
             limit,

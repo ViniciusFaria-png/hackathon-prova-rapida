@@ -10,7 +10,7 @@ import type {
 } from "../types/exam";
 import type { PaginatedResponse } from "../types/question";
 
-export type PdfEcoMode = "normal" | "save-paper" | "save-ink" | "eco-max";
+export type PdfEcoMode = "normal" | "save-paper" | "save-ink" | "eco-max" | "accessibility";
 
 export interface EcoModeInfo {
   mode: PdfEcoMode;
@@ -56,6 +56,19 @@ export async function addQuestionToExam(
   await axiosInstance.post(`${endpoints.exams}/${examId}/questions`, {
     questionId,
     position,
+  });
+}
+
+export interface BatchAddQuestionsPayload {
+  questions: Array<{ questionId: string; position: number }>;
+}
+
+export async function addQuestionsToExamBatch(
+  examId: string,
+  questions: Array<{ questionId: string; position: number }>,
+): Promise<void> {
+  await axiosInstance.post(`${endpoints.exams}/${examId}/questions/batch`, {
+    questions,
   });
 }
 

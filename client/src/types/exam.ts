@@ -17,6 +17,8 @@ export interface IExam {
   created_at: string;
   updated_at: string;
   questions: IExamQuestion[];
+  versions?: IExamVersion[];
+  questions_count?: number;
 }
 
 export interface IExamVersion {

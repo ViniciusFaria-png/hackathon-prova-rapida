@@ -90,7 +90,6 @@ export class ExportExamPdfUseCase {
         const doc = new PDFDocument({
           size: layout.pageSize as string,
           margins: layout.margins,
-          bufferPages: true,
         });
 
         const buffers: Buffer[] = [];
@@ -251,35 +250,6 @@ export class ExportExamPdfUseCase {
           }
         }
 
-        // ─── Footer with pagination and eco mode label ────────────────
-        const pages = doc.bufferedPageRange();
-        for (let i = 0; i < pages.count; i++) {
-          doc.switchToPage(i);
-
-          const footerY = doc.page.height - layout.margins.bottom + 10;
-
-          doc.fontSize(layout.fontSize.footer).font(layout.fontFamily)
-            .fillColor(layout.secondaryTextColor)
-            .text(
-              `Página ${i + 1} de ${pages.count}`,
-              leftEdge,
-              footerY,
-              { align: 'center', width: totalContentWidth }
-            );
-
-          if (layout.modeLabel && i === 0) {
-            doc.fontSize(layout.fontSize.footer).font(layout.fontFamily)
-              .fillColor(layout.secondaryTextColor)
-              .text(
-                layout.modeLabel,
-                leftEdge,
-                footerY + 10,
-                { align: 'center', width: totalContentWidth }
-              );
-          }
-        }
-
-        console.log('Finalizando documento PDF...');
         doc.end();
       } catch (error) {
         console.error('Erro ao gerar PDF:', error);

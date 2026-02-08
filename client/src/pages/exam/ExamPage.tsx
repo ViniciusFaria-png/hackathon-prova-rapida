@@ -206,7 +206,7 @@ export function ExamPage() {
                           />
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
-                          {exam.questions?.length ?? 0} questoes •{" "}
+                          {exam.questions_count ?? exam.questions?.length ?? 0} questoes •{" "}
                           {new Date(exam.created_at).toLocaleDateString("pt-BR")}
                         </Typography>
                       </Box>

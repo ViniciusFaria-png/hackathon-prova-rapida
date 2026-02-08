@@ -43,7 +43,6 @@ export const globalErrorHandler = (
   console.error('############### ERRO CAPTURADO ###############');
   console.error('Nome:', error.name);
   console.error('Mensagem:', error.message);
-  console.error('Stack:', error.stack);
   console.error('###############################################');
 
   if (env.NODE_ENV === "development" || env.ENV === "development") {
@@ -53,6 +52,14 @@ export const globalErrorHandler = (
   const handler = errorHandlerMap[error.constructor.name];
 
   if (handler) return handler(error, _, reply);
+
+  // Handle TypeError (e.g. "compare is not a function") and other runtime errors
+  if (error instanceof TypeError) {
+    return reply.status(500).send({
+      success: false,
+      message: "Erro interno do servidor. Tente novamente.",
+    });
+  }
 
   return reply.status(500).send({ message: "Internal server error" });
 };
