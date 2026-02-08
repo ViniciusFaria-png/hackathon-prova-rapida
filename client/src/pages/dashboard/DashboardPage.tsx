@@ -90,7 +90,7 @@ export default function DashboardPage() {
               Olá, {user?.name || "Professor"}!
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Bem-vindo ao Prova Rápida
+              Bem-vindo ao Prova Fácil
             </Typography>
           </Box>
           <Button
