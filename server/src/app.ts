@@ -17,11 +17,13 @@ app.register(fastifyJwt, {
 
 app.register(cors, {
     origin: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 });
 
 app.setErrorHandler(globalErrorHandler);
 
-// Registrar rotas
 app.register(userRoutes);
 app.register(questionRoutes);
 app.register(examRoutes);

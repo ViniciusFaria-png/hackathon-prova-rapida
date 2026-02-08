@@ -4,7 +4,7 @@ export interface CreateQuestionDTO {
     statement: string;
     subject: string;
     difficulty?: string;
-    userId?: string; // null para questões públicas
+    userId?: string;
     isPublic: boolean;
     alternatives: Array<{
         text: string;
@@ -44,6 +44,7 @@ export interface FindQuestionsFilters {
     page?: number;
     limit?: number;
     excludeUsedIn?: string;
+    currentUserId?: string;
 }
 
 export interface IQuestionRepository {

@@ -11,34 +11,51 @@ export class PGExamRepository implements IExamRepository {
             (SELECT COUNT(*) FROM exam_questions eq WHERE eq.exam_id = e.id) as question_count,
             (SELECT COUNT(*) FROM exam_versions ev WHERE ev.exam_id = e.id AND ev.status = 'finalized') as finalized_versions
             FROM exams e WHERE e.user_id = $1`;
+        
+        let countQuery = `SELECT COUNT(*) FROM exams e WHERE e.user_id = $1`;
         const params: any[] = [userId];
         let paramCount = 2;
 
         if (filters?.subject) {
-            query += ` AND e.subject = $${paramCount++}`;
+            const filter = ` AND e.subject = $${paramCount}`;
+            query += filter;
+            countQuery += filter;
             params.push(filters.subject);
+            paramCount++;
         }
         if (filters?.search) {
-            query += ` AND e.title ILIKE $${paramCount++}`;
+            const filter = ` AND e.title ILIKE $${paramCount}`;
+            query += filter;
+            countQuery += filter;
             params.push(`%${filters.search}%`);
+            paramCount++;
         }
         if (filters?.status === 'finalized') {
-            query += ` AND EXISTS (SELECT 1 FROM exam_versions ev WHERE ev.exam_id = e.id AND ev.status = 'finalized')`;
+            const filter = ` AND EXISTS (SELECT 1 FROM exam_versions ev WHERE ev.exam_id = e.id AND ev.status = 'finalized')`;
+            query += filter;
+            countQuery += filter;
         } else if (filters?.status === 'draft') {
-            query += ` AND NOT EXISTS (SELECT 1 FROM exam_versions ev WHERE ev.exam_id = e.id AND ev.status = 'finalized')`;
+            const filter = ` AND NOT EXISTS (SELECT 1 FROM exam_versions ev WHERE ev.exam_id = e.id AND ev.status = 'finalized')`;
+            query += filter;
+            countQuery += filter;
         }
 
-        const countQuery = query.replace(/SELECT e\.\*.*FROM exams e/, 'SELECT COUNT(*) FROM exams e');
         const countResult = await db.query(countQuery, params);
-        const total = Number.parseInt(countResult.rows[0].count, 10);
+        const total = countResult.rows[0] ? Number.parseInt(countResult.rows[0].count, 10) : 0;
 
-        query += ` ORDER BY e.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount++}`;
-        params.push(limit, offset);
+        query += ` ORDER BY e.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        const paginatedParams = [...params, limit, offset];
 
-        const result = await db.query(query, params);
+        const result = await db.query(query, paginatedParams);
+
+        const data = result.rows.map((row: any) => ({
+            ...row,
+            questions_count: Number.parseInt(row.question_count, 10) || 0,
+            finalized_versions_count: Number.parseInt(row.finalized_versions, 10) || 0,
+        }));
 
         return {
-            data: result.rows,
+            data,
             total,
             page,
             limit,
@@ -93,8 +110,15 @@ export class PGExamRepository implements IExamRepository {
             }
         }
 
+        const finalizedResult = await db.query(
+            "SELECT COUNT(*) as count FROM exam_versions WHERE exam_id = $1 AND status = 'finalized'",
+            [id]
+        );
+        const is_finalized = Number.parseInt(finalizedResult.rows[0].count, 10) > 0;
+
         return {
             ...exam,
+            is_finalized,
             questions: Array.from(questionsMap.values())
         };
     }

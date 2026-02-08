@@ -1,11 +1,14 @@
 import PDFDocument from 'pdfkit';
 import { IExamRepository } from "../repositories/interfaces/exam-repository.interface";
 import { ResourceNotFoundError } from "./errors/resource-not-found-error";
+import { PdfEcoMode, PdfLayoutConfig, getPdfLayoutConfig } from "./pdf-layout-presets";
 
 export class GenerateAnswerKeyPdfUseCase {
   constructor(private readonly examRepository: IExamRepository) {}
 
-  async handler(examId: string, versionId?: string): Promise<Buffer> {
+  async handler(examId: string, versionId?: string, ecoMode: PdfEcoMode = 'normal'): Promise<Buffer> {
+    const layout = getPdfLayoutConfig(ecoMode);
+
     let title: string;
     let subject: string;
     let versionLabel: string | null = null;
@@ -36,7 +39,7 @@ export class GenerateAnswerKeyPdfUseCase {
       questions = exam.questions;
     }
 
-    return this.generateAnswerKeyPDF(title, subject, versionLabel, questions);
+    return this.generateAnswerKeyPDF(title, subject, versionLabel, questions, layout);
   }
 
   private generateAnswerKeyPDF(
@@ -48,12 +51,13 @@ export class GenerateAnswerKeyPdfUseCase {
       statement: string;
       position: number;
       alternatives: Array<{ id: string; text: string; is_correct: boolean }>;
-    }>
+    }>,
+    layout: PdfLayoutConfig
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({
-        size: 'A4',
-        margins: { top: 60, bottom: 60, left: 50, right: 50 },
+        size: layout.pageSize as string,
+        margins: layout.margins,
       });
 
       const buffers: Buffer[] = [];
@@ -61,18 +65,22 @@ export class GenerateAnswerKeyPdfUseCase {
       doc.on('end', () => resolve(Buffer.concat(buffers)));
       doc.on('error', reject);
 
-      doc.fontSize(18).font('Helvetica-Bold')
+      const leftEdge = layout.margins.left;
+      const rightEdge = doc.page.width - layout.margins.right;
+
+      doc.fontSize(layout.fontSize.title).font(layout.fontFamilyBold)
+        .fillColor(layout.textColor)
         .text(title, { align: 'center' });
       
-      doc.moveDown(0.3);
-      doc.fontSize(14).font('Helvetica-Bold')
+      doc.moveDown(layout.headerSpacing * 0.6);
+      doc.fontSize(layout.fontSize.title - 4).font(layout.fontFamilyBold)
         .fillColor('#cc0000')
         .text('GABARITO OFICIAL', { align: 'center' });
-      doc.fillColor('#000000');
+      doc.fillColor(layout.textColor);
       
-      doc.moveDown(0.3);
-      doc.fontSize(11).font('Helvetica')
-        .fillColor('#555555')
+      doc.moveDown(layout.headerSpacing * 0.6);
+      doc.fontSize(layout.fontSize.subtitle).font(layout.fontFamily)
+        .fillColor(layout.secondaryTextColor)
         .text(`Disciplina: ${subject}`, { align: 'center' });
       
       if (versionLabel) {
@@ -83,31 +91,37 @@ export class GenerateAnswerKeyPdfUseCase {
         day: '2-digit', month: '2-digit', year: 'numeric',
       });
       doc.text(`Data: ${date}`, { align: 'center' });
-      doc.fillColor('#000000');
+      doc.fillColor(layout.textColor);
 
-      doc.moveDown(1);
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#cccccc');
-      doc.moveDown(0.8);
+      doc.moveDown(layout.headerSpacing + 0.5);
+      if (layout.showSeparators) {
+        doc.moveTo(leftEdge, doc.y).lineTo(rightEdge, doc.y).stroke(layout.separatorColor);
+      }
+      doc.moveDown(layout.questionSpacing + 0.3);
 
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const colWidth = 120;
-      const rowHeight = 22;
-      const startX = 80;
+      const cols = 4;
+      const colWidth = Math.floor(layout.contentWidth / cols);
+      const rowHeight = layout.compactAlternatives ? 16 : 22;
+      const startX = leftEdge + 10;
       let currentX = startX;
       let currentY = doc.y;
-      const cols = 4;
 
-      doc.fontSize(10).font('Helvetica-Bold');
+      doc.fontSize(layout.fontSize.alternative).font(layout.fontFamilyBold)
+        .fillColor(layout.textColor);
       for (let c = 0; c < cols; c++) {
         doc.text('Questão', currentX, currentY, { width: 50, align: 'left' });
         doc.text('Resp.', currentX + 55, currentY, { width: 40, align: 'left' });
         currentX += colWidth;
       }
       currentY += rowHeight;
-      doc.moveTo(startX, currentY - 4).lineTo(startX + colWidth * cols, currentY - 4).stroke('#cccccc');
+
+      if (layout.showSeparators) {
+        doc.moveTo(startX, currentY - 4).lineTo(startX + colWidth * cols, currentY - 4).stroke(layout.separatorColor);
+      }
 
       currentX = startX;
-      doc.font('Helvetica').fontSize(10);
+      doc.font(layout.fontFamily).fontSize(layout.fontSize.alternative);
 
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
@@ -122,19 +136,31 @@ export class GenerateAnswerKeyPdfUseCase {
           currentX = startX;
         }
 
-        if (currentY + rowHeight > doc.page.height - 80) {
+        if (currentY + rowHeight > doc.page.height - layout.margins.bottom - 20) {
           doc.addPage();
-          currentY = 60;
+          currentY = layout.margins.top;
         }
 
-        doc.font('Helvetica-Bold')
+        doc.font(layout.fontFamilyBold)
+          .fillColor(layout.textColor)
           .text(`${questionNumber}.`, currentX, currentY, { width: 30, align: 'right' });
-        doc.font('Helvetica-Bold')
-          .fillColor('#2e7d32')
+        doc.font(layout.fontFamilyBold)
+          .fillColor(layout.answerTextColor)
           .text(correctLetter, currentX + 55, currentY, { width: 40, align: 'left' });
-        doc.fillColor('#000000');
+        doc.fillColor(layout.textColor);
 
         currentX += colWidth;
+      }
+
+      if (layout.modeLabel) {
+        doc.fontSize(layout.fontSize.footer).font(layout.fontFamily)
+          .fillColor(layout.secondaryTextColor)
+          .text(
+            layout.modeLabel,
+            leftEdge,
+            doc.page.height - layout.margins.bottom + 10,
+            { align: 'center', width: layout.contentWidth }
+          );
       }
 
       doc.end();

@@ -12,7 +12,6 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
 
   const { email, password, name } = registerBodySchema.parse(request.body);
 
-  // Remover o hash daqui - deixar apenas no use case
   const createUserUseCase = makeCreateUserUseCase();
   const user = await createUserUseCase.handler({ email, password, name });
 

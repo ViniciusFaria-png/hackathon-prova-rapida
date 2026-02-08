@@ -1,4 +1,4 @@
-import { hash } from "bcryptjs";
+import bcrypt from "bcryptjs";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { UserRepository } from "../../../repositories/pg/user-repository";
@@ -19,14 +19,13 @@ export async function changePassword(request: FastifyRequest, reply: FastifyRepl
     return reply.status(404).send({ message: "Usuário não encontrado" });
   }
 
-  const { compare } = await import("bcryptjs");
-  const isPasswordValid = await compare(currentPassword, user.password);
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
 
   if (!isPasswordValid) {
     return reply.status(400).send({ message: "Senha atual incorreta" });
   }
 
-  const hashedPassword = await hash(newPassword, 8);
+  const hashedPassword = await bcrypt.hash(newPassword, 8);
   await userRepository.update(userId, { password: hashedPassword });
 
   return reply.status(200).send({ message: "Senha alterada com sucesso" });

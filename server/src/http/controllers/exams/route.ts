@@ -2,9 +2,11 @@ import { FastifyInstance } from "fastify";
 import { jwtAuth } from "../../middleware/jwt-auth";
 import { addQuestion } from "./add-question";
 import { answerKey } from "./answer-key";
+import { batchAddQuestions } from "./batch-add-questions";
 import { create } from "./create";
 import { remove } from "./delete";
 import { duplicate } from "./duplicate";
+import { ecoModes } from "./eco-modes";
 import { exportPdf } from "./export-pdf";
 import { finalize } from "./finalize";
 import { findAll } from "./find-all";
@@ -28,6 +30,7 @@ export async function examRoutes(app: FastifyInstance) {
   app.delete("/exams/:id", remove);
   
   app.post("/exams/:id/questions", addQuestion);
+  app.post("/exams/:id/questions/batch", batchAddQuestions);
   app.delete("/exams/:id/questions/:questionId", removeQuestion);
   app.put("/exams/:id/questions/reorder", reorder);
   
@@ -35,12 +38,14 @@ export async function examRoutes(app: FastifyInstance) {
   app.get("/exams/:id/preview", preview);
   app.post("/exams/:id/duplicate", duplicate);
 
-  app.post("/exams/:id/export", exportPdf);
-  app.post("/exams/:id/answer-key", answerKey);
+  app.get("/exams/:id/export", exportPdf);
+  app.get("/exams/:id/answer-key", answerKey);
 
   app.post("/exams/:id/finalize", finalize);
   app.post("/exams/:id/generate-versions", generateVersions);
 
   app.get("/exams/:id/stats", stats);
   app.post("/exams/:id/validate", validate);
+
+  app.get("/exams/eco-modes", ecoModes);
 }

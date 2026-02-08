@@ -39,6 +39,7 @@ export async function signin(request: FastifyRequest, reply: FastifyReply) {
     return reply.status(200).send({
       user: {
         id: user.id,
+        name: user.name,
         email: user.email,
       },
       token,

@@ -1,7 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeUpdateQuestionUseCase } from "../../../use-cases/factories/make-update-question-use-case";
-import { canEditQuestion } from "../../middleware/permissions";
 
 export async function update(request: FastifyRequest, reply: FastifyReply) {
   const paramsSchema = z.object({
@@ -19,10 +18,12 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   const data = bodySchema.parse(request.body);
   const userId = request.user.sub;
 
-  await canEditQuestion(userId, id);
-
   const updateQuestionUseCase = makeUpdateQuestionUseCase();
-  await updateQuestionUseCase.handler(id, data);
+  const result = await updateQuestionUseCase.handler(id, data, userId);
+
+  if (result.copied) {
+    return reply.status(201).send({ id: result.id, copied: true });
+  }
 
   return reply.status(204).send();
 }

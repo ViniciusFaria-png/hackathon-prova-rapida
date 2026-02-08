@@ -15,9 +15,10 @@ export async function findAll(request: FastifyRequest, reply: FastifyReply) {
   });
 
   const filters = querySchema.parse(request.query);
+  const currentUserId = request.user.sub;
 
   const findAllQuestionsUseCase = makeFindAllQuestionsUseCase();
-  const result = await findAllQuestionsUseCase.handler(filters);
+  const result = await findAllQuestionsUseCase.handler({ ...filters, currentUserId });
 
   return reply.status(200).send({
     success: true,

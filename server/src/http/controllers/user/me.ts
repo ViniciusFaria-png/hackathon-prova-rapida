@@ -7,7 +7,6 @@ export async function me(request: FastifyRequest, reply: FastifyReply) {
   const findUserByIdUseCase = makeFindUserByIdUseCase();
   const { user } = await findUserByIdUseCase.execute({ userId });
 
-  // Remover senha da resposta
   const { password, ...userWithoutPassword } = user;
 
   return reply.status(200).send(userWithoutPassword);

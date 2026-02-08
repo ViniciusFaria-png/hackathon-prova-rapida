@@ -23,10 +23,11 @@ BEGIN
     LOOP
         FOR q_index IN 1..5 LOOP
             
-            INSERT INTO questions (statement, subject)
+            INSERT INTO questions (statement, subject, is_public)
             VALUES (
                 'Questão simulada ' || q_index || ' de ' || subj || ': Esta é uma pergunta de exemplo para testar o banco de dados. Qual a alternativa correta?',
-                subj
+                subj,
+                true
             )
             RETURNING id INTO new_question_id;
 
