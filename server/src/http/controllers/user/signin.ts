@@ -60,38 +60,3 @@ export async function signin(request: FastifyRequest, reply: FastifyReply) {
     });
   }
 }
-
-export const signinSchema = {
-  summary: "User authentication",
-  tags: ["Auth"],
-  body: {
-    type: "object",
-    properties: {
-      email: { type: "string", format: "email" },
-      password: { type: "string", minLength: 1 },
-    },
-    required: ["email", "password"],
-  },
-  response: {
-    200: {
-      type: "object",
-      properties: {
-        user: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            email: { type: "string" },
-          },
-        },
-        token: { type: "string" },
-        message: { type: "string" },
-      },
-    },
-    401: {
-      type: "object",
-      properties: {
-        message: { type: "string", example: "Email ou senha incorretos" },
-      },
-    },
-  },
-};

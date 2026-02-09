@@ -12,32 +12,3 @@ export async function findAll(request: FastifyRequest, reply: FastifyReply) {
     throw err;
   }
 }
-
-export const findAllUsersSchema = {
-  summary: "Retrieve all users",
-  tags: ["Users"],
-  response: {
-    200: {
-      type: "object",
-      properties: {
-        users: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              email: { type: "string" },
-              password: { type: "string" },
-            },
-          },
-        },
-      },
-    },
-    500: {
-      type: "object",
-      properties: {
-        message: { type: "string" },
-      },
-    },
-  },
-};
