@@ -6,9 +6,12 @@ import { alternativeRoutes } from './http/controllers/alternative/route';
 import { examRoutes } from './http/controllers/exams/route';
 import { questionRoutes } from './http/controllers/question/route';
 import { userRoutes } from './http/controllers/user/routes';
+import { swaggerPlugin } from './plugins/swagger';
 import { globalErrorHandler } from './utils/global-error-handler';
 
 export const app = fastify();
+
+app.register(swaggerPlugin);
 
 app.register(fastifyJwt, {
     secret: env.JWT_SECRET,
