@@ -39,3 +39,65 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
     throw err;
   }
 }
+
+export const updateUserSchema = {
+  summary: "Update a user by ID",
+  tags: ["Users"],
+  params: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+    },
+    required: ["id"],
+  },
+  body: {
+    type: "object",
+    properties: {
+      email: { type: "string", format: "email" },
+      password: { type: "string", minLength: 6 },
+    },
+    minProperties: 1,
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        user: {
+          type: "object",
+          properties: {
+            id: { type: "number" },
+            email: { type: "string" },
+            password: { type: "string" },
+          },
+          required: ["id", "email", "password"],
+        },
+      },
+    },
+    400: {
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Validation error." },
+        issues: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              code: { type: "string" },
+              expected: { type: "string" },
+              received: { type: "string" },
+              path: { type: "array", items: { type: "string" } },
+              message: { type: "string" },
+            },
+            required: ["code", "expected", "received", "path", "message"],
+          },
+        },
+      },
+    },
+    404: {
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Resource not found" },
+      },
+    },
+  },
+};

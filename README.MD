@@ -4,46 +4,46 @@
 
 Sistema web desenvolvido para automatizar o processo de criação, composição e geração de provas acadêmicas em formato PDF. A solução permite que professores criem bancos de questões reutilizáveis, componham provas personalizadas e gerem múltiplas versões embaralhadas com gabaritos separados, otimizando o tempo de preparação de avaliações e reduzindo riscos de cola.
 
-**Objetivo Principal:** Transformar a criação manual de provas em um processo digital, ágil, seguro e, principalmente, econômico.
+**Objetivo Principal:** Transformar a criação manual de provas em um processo digital, ágil e seguro.
 
 **Impacto Esperado:**
-- Redução drástica no tempo de formatação de provas.
-- Eliminação de erros manuais na correção e composição de gabaritos
+- Redução de 70% no tempo de criação de provas
+- Eliminação de erros manuais na composição de gabaritos
 - Facilitar reutilização de questões entre diferentes avaliações
-- Mitigação de "colas" através da geração automática de versões embaralhadas (A, B, C).
+- Aumentar a segurança acadêmica através de versões embaralhadas
 
 ---
 
-## 🎯 O Problema: Sobrecarga Docente e Escassez de Recursos
+## 🎯 Problema Identificado
 
-### Contexto Atual
-No cenário da educação pública, professores e gestores enfrentam um dilema diário: a necessidade de avaliar com qualidade *versus* a escassez de tempo e verba. O processo tradicional de elaboração de provas tornou-se insustentável devido a quatro fatores críticos:
+### Contexto
+Professores e instituições de ensino enfrentam desafios significativos no processo tradicional de criação de provas:
 
-### 1. Sobrecarga e Saúde do Professor (Burnout)
-O tempo gasto com burocracia subtrai horas de planejamento pedagógico e descanso.
-* **Tempo Desproporcional:** Professores gastam mais de 6 horas semanais apenas criando e corrigindo atividades manuais (dados TALIS/Jeduca).
-* **Trabalho Braçal:** A formatação manual em editores de texto comuns (Word/Docs) é repetitiva, frustrante e consome a energia que deveria estar na sala de aula.
-* **Retrabalho:** A dificuldade em reaproveitar questões antigas obriga o docente a "reinventar a roda" a cada bimestre.
+1. **Tempo Excessivo de Preparação**
+   - Criação manual de questões consome horas de trabalho
+   - Formatação de documentos é repetitiva e propensa a erros
+   - Reaproveitamento de questões anteriores é difícil e desorganizado
 
-### 2. Ineficiência Financeira e Material (O Diferencial de Custo)
-Em escolas com orçamentos limitados, a falta de otimização na impressão gera desperdício de verba pública.
-* **Layouts Não Otimizados:** Provas formatadas manualmente raramente consideram economia de tinta ou papel, gerando custos até 50% maiores do que o necessário.
-* **Falta de Acessibilidade:** A ausência de padronização visual dificulta a leitura para alunos com necessidades específicas, exigindo reimpressões ou adaptações manuais demoradas.
+2. **Risco de Fraude Acadêmica**
+   - Provas idênticas em turmas diferentes facilitam compartilhamento de respostas
+   - Falta de ferramentas para gerar versões diferentes de forma ágil
 
-### 3. Gestão Descentralizada e Perda de Dados
-A falta de um sistema unificado gera desorganização no acervo intelectual da escola.
-* **Dispersão de Conteúdo:** Questões ficam espalhadas em pen-drives, e-mails e papéis soltos, sem categorização por dificuldade ou disciplina.
-* **Risco de Perda:** Sem backup centralizado, anos de trabalho de um professor podem ser perdidos por falhas em computadores pessoais.
+3. **Gestão Inadequada de Banco de Questões**
+   - Ausência de categorização e organização de questões
+   - Dificuldade em localizar questões específicas por disciplina ou dificuldade
+   - Questões ficam dispersas em arquivos de diferentes formatos
 
-### 4. Vulnerabilidade e Erros Manuais
-O fator humano no processo repetitivo aumenta a incidência de falhas.
-* **Risco de Fraude (Cola):** A dificuldade em criar múltiplas versões da mesma prova facilita o compartilhamento de respostas entre turmas.
-* **Inconsistências:** Erros de gabarito e formatação desconfigurada são comuns quando o professor está sobrecarregado.
+4. **Erros Manuais**
+   - Gabaritos com erros de correspondência
+   - Formatação inconsistente entre provas
+   - Perda de questões por falta de backup centralizado
+
+### Justificativa da Solução
+A digitalização e automação desse processo através de um sistema web resolve simultaneamente todos os pontos críticos identificados, permitindo que professores foquem no conteúdo pedagógico ao invés de tarefas administrativas repetitivas.
 
 ---
 
-### 🚀 Por que o "Prova Rápida" é a Solução?
-O projeto não é apenas um gerador de provas, mas uma ferramenta de **gestão de recursos e tempo**. Ao automatizar a diagramação com foco em **economia de tinta/papel** e centralizar o banco de questões, o sistema ataca a raiz do adoecimento docente e oferece viabilidade econômica para a escola pública, garantindo avaliações acessíveis, seguras e de baixo custo.
+## 🚀 Descrição da Solução
 
 ### Visão Geral
 Sistema web fullstack que centraliza todo o ciclo de vida de criação de provas acadêmicas, desde a composição do banco de questões até a geração final de PDFs prontos para impressão.
@@ -136,90 +136,35 @@ Sistema web fullstack que centraliza todo o ciclo de vida de criação de provas
 ## 🔧 Detalhes Técnicos
 
 ### Stack Tecnológica
-O projeto foi desenvolvido utilizando uma arquitetura Monorepo com separação clara entre Frontend e Backend, orquestrados via Docker.
 
 #### Backend
 - **Runtime:** Node.js
 - **Framework:** Fastify (alta performance, TypeScript-first)
 - **Linguagem:** TypeScript
-- **Banco de Dados:** PostgreSQL 15.
-- **ORM/Query:** pg (driver nativo) com query builder manual para otimização.
-- **Autenticação:** @fastify/jwt + bcryptjs
-- **Validação:** Zod (para validação de schemas de entrada e saída).
-- **Geração de PDF:** PDFKit (geração programática de documentos vetoriais leves).
+- **Banco de Dados:** PostgreSQL
+- **Autenticação:** JSON Web Tokens (JWT)
+- **Validação:** Zod
+- **Geração de PDF:** Puppeteer / PDFKit
 
-#### Frontend
-- **Framework:** React 19 + Vite.
-- **Linguagem:** TypeScript.
-- **Estilização:** Material UI (MUI) v7.
-- **Estado:** React Hooks + Axios.
-- **Interatividade:** @dnd-kit (para arrastar e soltar questões na organização da prova).
-- **Formulários:** React Hook Form + Zod resolver.
-- **Notificações:** Sonner
+#### Frontend (Planejado)
+- **Framework:** React / Vite
+- **Estilização:** Tailwind CSS / MUI
+- **Estado:** React Query
+- **Formulários:** React Hook Form
 
-#### Infraestrutura & DevOps
-- **Containerização:** Docker e Docker Compose.
-- **Ambiente:** Configuração via variáveis de ambiente (.env).
-
-
-
-#### Arquitetura do Sistema (Backend)
-- O Backend segue os princípios de Clean Architecture e SOLID, visando desacoplamento e testabilidade.
-
-- Controller Layer (src/http/controllers): Responsável apenas por receber a requisição HTTP, validar dados (Zod) e devolver a resposta. Não contém regras de negócio.
-
-- Use Cases Layer (src/use-cases): Contém a lógica de negócio pura (ex: create-exam, generate-exam-pdf). É agnóstico ao framework HTTP.
-
-- Repository Layer (src/repositories): Abstração do acesso ao banco de dados. Permite trocar o banco (ex: de Postgres para In-Memory em testes) sem afetar as regras de negócio.
-
-- Entities/Models: Definições de tipos e interfaces do domínio.
-
-### Estrutura de Diretórios
-```
-├── client/                 # Frontend (React + Vite)
-│   ├── src/
-│   │   ├── actions/        # Integração com API (Axios services)
-│   │   ├── components/     # Componentes reutilizáveis (MUI)
-│   │   ├── contexts/       # Context API (AuthContext, etc)
-│   │   ├── pages/          # Páginas da aplicação (Dashboard, Exam, Question)
-|   |   ├── lib/            # Axios  
-│   │   └── types/          # Tipagem compartilhada no front
-│   ├── Dockerfile
-│   └── package.json
-│
-├── server/                 # Backend (Fastify)
-│   ├── db/                 # Scripts SQL (Migrations/Seeds)
-│   ├── src/
-│   │   ├── http/
-│   │   │   ├── controllers/ # Handlers de rotas (Exams, Questions, User)
-│   │   │   └── middleware/  # Auth (JWT) e Permissões
-│   │   ├── lib/            # Configurações (DB connection, etc)
-│   │   ├── repositories/   # Implementação PostgreSQL
-│   │   ├── use-cases/      # Regras de Negócio (Lógica Core)
-│   │   │   ├── factories/  # Padrão Factory para instanciar Use Cases
-│   │   │   └── errors/     # Erros customizados de domínio
-│   │   ├── utils/          # Global Error Handler
-│   │   └── app.ts          # Entry point e registro de rotas
-│   ├── Dockerfile
-│   └── package.json
-│
-├── docker-compose.yml      # Orquestração dos serviços
-└── README.MD
+### Arquitetura do Sistema
 ```
 
-### Modelo de Dados
-O banco PostgreSQL foi estruturado com as seguintes entidades principais:
+```
 
-- Users: Professores/Administradores.
+### Estrutura de Pastas
+```
 
-- Questions: Enunciado e metadados.
+```
 
-- Alternatives: Opções de resposta vinculadas às questões.
-
-- Exams: O cabeçalho da prova e configurações.
-
-- ExamQuestions: Tabela pivô que vincula questões à prova, controlando a ordem e pontuação.
-
+### Modelo de Dados (Simplificado)
+```
+```
 
 ### Principais Endpoints da API
 
@@ -250,72 +195,23 @@ O banco PostgreSQL foi estruturado com as seguintes entidades principais:
 
 ---
 
+## 🔗 Links Úteis
 
-### Pré-requisitos
+### Repositório de Código
+- **GitHub:** 
 
-- Docker e Docker Compose instalados
+### Protótipos e Design
+- **Miro (Brainstorming):** 
 
-### Passo a Passo
+### Documentação Adicional
+- **API Docs (Swagger):** 
+- **Guia de Instalação:** 
+- **Changelog:** 
 
-1. **Clone o repositório:**
-   ```bash
-   git clone <url-do-repositorio>
-   cd hackathon-prova-rapida
-   ```
-
-2. **Configure as variáveis de ambiente:**
-   
-   Crie um arquivo `.env` na raiz (baseado nos exemplos das pastas client e server) ou utilize os valores padrão do `docker-compose.yml`.
-
-3. **Suba os containers:**
-   ```bash
-   docker-compose up --build
-   ```
-
-4. **Acesse a aplicação:**
-   - **Frontend:** http://localhost:5173
-   - **Backend:** http://localhost:3000
-   - **Banco de Dados:** Porta 5433 (externa)
+### Ferramentas de Gestão
+- **Discord:** 
 
 ---
-
-## 📡 Principais Endpoints (API)
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/users` | Cadastro de novo professor |
-| POST | `/sessions` | Autenticação (Login) |
-| GET | `/questions` | Listagem de questões com filtros |
-| POST | `/questions` | Criação de nova questão |
-| POST | `/exams` | Criação de prova (rascunho) |
-| PATCH | `/exams/:id/reorder` | Reordenação de questões (Drag & Drop) |
-| GET | `/exams/:id/pdf` | Geração do PDF da prova |
-| GET | `/exams/:id/answer-key` | Geração do PDF do gabarito |
-
----
-
-## 📅 Processo de Desenvolvimento & Metodologia
-
-O desenvolvimento seguiu o cronograma do Hackathon, focado na entrega de um **MVP (Minimum Viable Product)** funcional.
-
-1. **Discovery & Design Thinking:** Entendimento da dor do usuário (professor) e definição dos requisitos de economia de papel e facilidade de uso.
-2. **Modelagem:** Definição do Schema do banco de dados para suportar múltiplas versões de prova.
-3. **Backend Development:** Implementação da API RESTful com TDD mental (focando nos casos de uso antes dos controladores).
-4. **Frontend Integration:** Construção da interface com Material UI para agilidade no desenvolvimento.
-5. **Refinamento:** Implementação da lógica de embaralhamento de questões (Shuffle) e geração de PDFs com pdfkit.
-
----
-
-## 🔮 Próximos Passos (Roadmap)
-
-- [ ] **Modo Eco:** Algoritmo para reduzir ainda mais o espaço em branco nos PDFs
-- [ ] **Banco Público:** Permitir que professores compartilhem questões entre si
-- [ ] **Dashboard:** Estatísticas de desempenho dos alunos baseadas nos gabaritos
-- [ ] **CI/CD:** Pipeline automatizado para deploy na Vercel/Render
-
----
-
-**Desenvolvido pelo Grupo 57 - FIAP Postech**
 
 ## 📚 Aprendizados e Próximos Passos
 
@@ -383,4 +279,18 @@ O desenvolvimento seguiu o cronograma do Hackathon, focado na entrega de um **MV
 
 ---
 
-**Desenvolvido pelo Grupo 57 - FIAP Postech**
+## 📄 Licença
+
+
+
+## 👥 Contribuidores
+
+
+
+## 📧 Contato
+
+
+
+---
+
+**Desenvolvido por Grupo 57**

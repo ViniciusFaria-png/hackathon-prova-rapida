@@ -1,25 +1,4 @@
 import { FastifyInstance } from "fastify";
-import {
-    addQuestionToExamSchema,
-    answerKeySchema,
-    batchAddQuestionsSchema,
-    createExamSchema,
-    deleteExamSchema,
-    duplicateExamSchema,
-    ecoModesSchema,
-    examStatsSchema,
-    exportPdfSchema,
-    finalizeExamSchema,
-    findAllExamsSchema,
-    findExamByIdSchema,
-    generateVersionsSchema,
-    previewExamSchema,
-    removeQuestionFromExamSchema,
-    reorderExamQuestionsSchema,
-    shuffleExamSchema,
-    updateExamSchema,
-    validateExamSchema,
-} from "../../../schemas/exam/exam.schemas";
 import { jwtAuth } from "../../middleware/jwt-auth";
 import { addQuestion } from "./add-question";
 import { answerKey } from "./answer-key";
@@ -44,29 +23,29 @@ import { validate } from "./validate";
 export async function examRoutes(app: FastifyInstance) {
   app.addHook('onRequest', jwtAuth);
 
-  app.post("/exams", { schema: createExamSchema }, create);
-  app.get("/exams", { schema: findAllExamsSchema }, findAll);
-  app.get("/exams/:id", { schema: findExamByIdSchema }, findById);
-  app.put("/exams/:id", { schema: updateExamSchema }, update);
-  app.delete("/exams/:id", { schema: deleteExamSchema }, remove);
+  app.post("/exams", create);
+  app.get("/exams", findAll);
+  app.get("/exams/:id", findById);
+  app.put("/exams/:id", update);
+  app.delete("/exams/:id", remove);
+  
+  app.post("/exams/:id/questions", addQuestion);
+  app.post("/exams/:id/questions/batch", batchAddQuestions);
+  app.delete("/exams/:id/questions/:questionId", removeQuestion);
+  app.put("/exams/:id/questions/reorder", reorder);
+  
+  app.post("/exams/:id/shuffle", shuffle);
+  app.get("/exams/:id/preview", preview);
+  app.post("/exams/:id/duplicate", duplicate);
 
-  app.post("/exams/:id/questions", { schema: addQuestionToExamSchema }, addQuestion);
-  app.post("/exams/:id/questions/batch", { schema: batchAddQuestionsSchema }, batchAddQuestions);
-  app.delete("/exams/:id/questions/:questionId", { schema: removeQuestionFromExamSchema }, removeQuestion);
-  app.put("/exams/:id/questions/reorder", { schema: reorderExamQuestionsSchema }, reorder);
+  app.get("/exams/:id/export", exportPdf);
+  app.get("/exams/:id/answer-key", answerKey);
 
-  app.post("/exams/:id/shuffle", { schema: shuffleExamSchema }, shuffle);
-  app.get("/exams/:id/preview", { schema: previewExamSchema }, preview);
-  app.post("/exams/:id/duplicate", { schema: duplicateExamSchema }, duplicate);
+  app.post("/exams/:id/finalize", finalize);
+  app.post("/exams/:id/generate-versions", generateVersions);
 
-  app.get("/exams/:id/export", { schema: exportPdfSchema }, exportPdf);
-  app.get("/exams/:id/answer-key", { schema: answerKeySchema }, answerKey);
+  app.get("/exams/:id/stats", stats);
+  app.post("/exams/:id/validate", validate);
 
-  app.post("/exams/:id/finalize", { schema: finalizeExamSchema }, finalize);
-  app.post("/exams/:id/generate-versions", { schema: generateVersionsSchema }, generateVersions);
-
-  app.get("/exams/:id/stats", { schema: examStatsSchema }, stats);
-  app.post("/exams/:id/validate", { schema: validateExamSchema }, validate);
-
-  app.get("/exams/eco-modes", { schema: ecoModesSchema }, ecoModes);
+  app.get("/exams/eco-modes", ecoModes);
 }

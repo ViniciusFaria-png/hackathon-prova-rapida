@@ -29,3 +29,47 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
     throw err;
   }
 }
+
+export const deleteUserSchema = {
+  summary: "Delete a user by ID",
+  tags: ["Users"],
+  params: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+    },
+    required: ["id"],
+  },
+  response: {
+    204: {
+      type: "null",
+      description: "No content",
+    },
+    400: {
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Validation error." },
+        issues: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              code: { type: "string" },
+              expected: { type: "string" },
+              received: { type: "string" },
+              path: { type: "array", items: { type: "string" } },
+              message: { type: "string" },
+            },
+            required: ["code", "expected", "received", "path", "message"],
+          },
+        },
+      },
+    },
+    404: {
+      type: "object",
+      properties: {
+        message: { type: "string", example: "Resource not found" },
+      },
+    },
+  },
+};
